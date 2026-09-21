@@ -17,7 +17,7 @@ did:
     text: Brought the Dutch and French teams onto one shared Figma setup and one way
       of working.
   - title: A workflow app, rebuilt
-    text: Document scanning and task tracking in one, with clean journeys that paid
+    text: Document scanning and task tracking in one, with clean flows that paid
       off years of design debt.
   - title: Illustrated avatars
     text: Small illustrations that gave an internal tool some warmth.
