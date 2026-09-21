@@ -32,3 +32,11 @@ const markFiles = import.meta.glob<{ default: ImageMetadata }>('../content/compa
 export function markFor(slug: string) {
   return Object.entries(markFiles).find(([p]) => p.split('/').pop()!.replace(/\.\w+$/, '') === slug)?.[1].default;
 }
+
+const riveFiles = import.meta.glob<string>('../content/companies/rive/*.riv', { query: '?url', import: 'default', eager: true });
+
+/** URL of a Rive file, matched by filename ("./rive/penguin.riv" or "penguin"). */
+export function riveFor(ref: string) {
+  const name = ref.split('/').pop()!.replace(/\.riv$/, '');
+  return Object.entries(riveFiles).find(([p]) => p.split('/').pop()!.replace(/\.riv$/, '') === name)?.[1];
+}

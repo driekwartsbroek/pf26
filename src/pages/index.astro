@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Clock from '../components/Clock.astro';
 import Sticker from '../components/Sticker.astro';
+import RivePlayer from '../components/RivePlayer.astro';
 import { site } from '../lib/site';
 import { companies, url } from '../lib/util';
 
@@ -14,6 +15,9 @@ const list = await companies();
 <Base layer="me" next={url('/work')}>
   <section class="me">
     <article class="card surface" data-scene-start>
+      <div class="cover">
+        <RivePlayer src="bert-head" track label="Illustration of Bert, looking at your cursor" />
+      </div>
       <div class="avatar" transition:name="me">
         <Image src={portrait} alt={`Portrait of ${site.name}`} widths={[96, 192]} sizes="96px" loading="eager" />
       </div>
@@ -59,8 +63,8 @@ const list = await companies();
   .card {
     position: relative;
     z-index: 1;
-    width: min(100%, 380px);
-    padding: 24px;
+    width: min(100%, 420px);
+    padding: 8px 24px 24px;
     display: grid;
     gap: 16px;
     animation: pop 420ms var(--spring) both;
@@ -73,14 +77,24 @@ const list = await companies();
     }
   }
 
+  /* Profile cover: the animated header, with the photo overlapping its edge */
+  .cover {
+    margin: 0 -16px;
+    aspect-ratio: 1200 / 340;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--canvas);
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
   .avatar {
+    position: relative;
     width: 72px;
     height: 72px;
     border-radius: 50%;
     overflow: hidden;
     background: var(--canvas);
     box-shadow: 0 0 0 1px var(--border), 0 0 0 4px #fff, 0 0 0 5px var(--border);
-    margin: 4px 0 0 4px;
+    margin: -44px 0 0 4px;
   }
   .avatar :global(img) {
     width: 100%;

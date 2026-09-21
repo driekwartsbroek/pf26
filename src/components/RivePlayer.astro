@@ -1,0 +1,127 @@
+---
+// Plays a Rive file with its state machine, so its own listeners (hover, click, drag) just work.
+// Loads when it scrolls into view, pauses when it leaves, and stops on page change.
+import { riveFor } from '../lib/util';
+
+interface Props {
+  src: string;
+  stateMachine?: string;
+  /** Feed the cursor position from anywhere on the page, for things that look at you. */
+  track?: boolean;
+  label?: string;
+  class?: string;
+}
+
+const { src, stateMachine, track = false, label, class: cls } = Astro.props;
+const url = riveFor(src);
+---
+
+<div
+  class:list={['rive', cls]}
+  data-rive={url}
+  data-sm={stateMachine}
+  data-track={track ? '' : undefined}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+>
+  <canvas></canvas>
+</div>
+
+<style>
+  .rive {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 400ms;
+  }
+  .rive.ready canvas {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  import { Rive, Layout, Fit, Alignment, RuntimeLoader } from '@rive-app/canvas';
+  import wasm from '@rive-app/canvas/rive.wasm?url';
+
+  RuntimeLoader.setWasmUrl(wasm);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+
+  document.addEventListener('astro:page-load', () => {
+    const boxes = [...document.querySelectorAll<HTMLElement>('[data-rive]')];
+    if (!boxes.length) return;
+    const players = new Map<HTMLElement, Rive>();
+    const cleanups: (() => void)[] = [];
+
+    const boot = (box: HTMLElement) => {
+      const canvas = box.querySelector('canvas')!;
+      const sm = box.dataset.sm;
+      const r = new Rive({
+        src: box.dataset.rive!,
+        canvas,
+        autoplay: !reduced.matches,
+        ...(sm ? { stateMachines: sm } : {}),
+        layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
+        isTouchScrollEnabled: true,
+        onLoad: () => {
+          r.resizeDrawingSurfaceToCanvas();
+          // Without a named state machine, run the first one so listeners are live.
+          if (!sm && r.stateMachineNames.length) r.play(r.stateMachineNames[0]);
+          if (reduced.matches) r.pause();
+          box.classList.add('ready');
+        },
+      });
+      players.set(box, r);
+
+      const ro = new ResizeObserver(() => r.resizeDrawingSurfaceToCanvas());
+      ro.observe(box);
+      cleanups.push(() => ro.disconnect());
+
+      // Eyes that follow the cursor across the whole page: forward pointer moves from outside the
+      // canvas, pulled to its edge, so the artwork keeps looking in the right direction.
+      if (box.hasAttribute('data-track')) {
+        const onMove = (e: PointerEvent) => {
+          const b = canvas.getBoundingClientRect();
+          if (e.target === canvas) return;
+          const x = Math.min(Math.max(e.clientX, b.left + 1), b.right - 1);
+          const y = Math.min(Math.max(e.clientY, b.top + 1), b.bottom - 1);
+          for (const type of ['pointermove', 'mousemove'] as const) {
+            const Ev = type === 'pointermove' ? PointerEvent : MouseEvent;
+            canvas.dispatchEvent(new Ev(type, { clientX: x, clientY: y, bubbles: false }));
+          }
+        };
+        addEventListener('pointermove', onMove, { passive: true });
+        cleanups.push(() => removeEventListener('pointermove', onMove));
+      }
+    };
+
+    const io = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          const box = e.target as HTMLElement;
+          const r = players.get(box);
+          if (e.isIntersecting) {
+            if (!r) boot(box);
+            else if (!reduced.matches) r.play();
+          } else r?.pause();
+        }),
+      { rootMargin: '200px' },
+    );
+    boxes.forEach((b) => io.observe(b));
+
+    document.addEventListener(
+      'astro:before-swap',
+      () => {
+        io.disconnect();
+        cleanups.forEach((c) => c());
+        players.forEach((r) => r.cleanup());
+      },
+      { once: true },
+    );
+  });
+</script>

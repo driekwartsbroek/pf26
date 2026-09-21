@@ -144,6 +144,12 @@ content:
             label: Stack (several screens piled up; opens as a grid)
             type: image
             list: true
+          - name: rive
+            label: Rive file (e.g. ./rive/penguin.riv; put the file in src/content/companies/rive)
+            type: string
+          - name: stateMachine
+            label: Rive state machine (optional)
+            type: string
           - name: caption
             label: Caption
             type: string

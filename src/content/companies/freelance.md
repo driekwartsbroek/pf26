@@ -22,6 +22,12 @@ shots:
     span: normal
     fit: cover
     redact: false
+  - rive: ./rive/goally-penguin.riv
+    stateMachine: moodTracker
+    caption: Goally habit tracker, finish your habits to give the penguin a shower
+  - rive: ./rive/feeder-dog.riv
+    caption: Portion picker experiment, the dog grows with the portion
+    span: tall
   - stack:
       - shots/freelance-coponcho-desktop.png
       - shots/freelance-coponcho-mobile.png

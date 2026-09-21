@@ -1,11 +1,14 @@
 ---
 import { Image, getImage } from 'astro:assets';
 import { linkPreview, type Preview } from '../lib/linkPreview';
+import RivePlayer from './RivePlayer.astro';
 
 interface Shot {
   image?: ImageMetadata;
   link?: string;
   stack?: ImageMetadata[];
+  rive?: string;
+  stateMachine?: string;
   caption: string;
   title?: string;
   text?: string;
@@ -29,6 +32,7 @@ type Item = Shot & {
 
 const items: Item[] = await Promise.all(
   shots.map(async (s) => {
+    if (s.rive) return { ...s, tiny: '', full: '' };
     if (s.stack?.length) {
       const pile = await Promise.all(
         s.stack.map(async (img) => {
@@ -72,7 +76,15 @@ const items: Item[] = await Promise.all(
               <span class="num">{String(i + 1).padStart(2, '0')}</span>
               {s.caption}
             </p>
-            {s.pile ? (
+            {s.rive ? (
+              <div class="frame rivecard">
+                <RivePlayer src={s.rive} stateMachine={s.stateMachine} label={s.caption} />
+                <span class="try" aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 16 16"><path d="M4 2.5v10.2l2.7-2.4 1.9 4 2-.9-1.9-4h3.6z" fill="currentColor" /></svg>
+                  Try it
+                </span>
+              </div>
+            ) : s.pile ? (
               <button
                 class="frame stackcard"
                 type="button"
@@ -366,6 +378,34 @@ const items: Item[] = await Promise.all(
   }
   .linkcard:hover .lc-go svg {
     translate: 2px -2px;
+  }
+
+  /* Rive tiles: a live animation on the canvas */
+  .rivecard {
+    cursor: default;
+    background:
+      radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0) 0 0 / 18px 18px,
+      var(--canvas);
+  }
+  .try {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+    transition: opacity var(--med);
+  }
+  .rivecard:hover .try {
+    opacity: 0;
   }
 
   /* Stack tiles: screens lying on top of each other */
