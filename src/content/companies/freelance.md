@@ -18,20 +18,27 @@ prototypes:
 shots:
   - link: https://getgoally.com/goally-apps/polar-bank/
     caption: Polar Bank, a counting game for Goally
-    text: A counting game for kids with learning disabilities. Design, original illustrations, Rive animation and voice work.
+    text: A counting game for kids with learning disabilities. Design, original
+      illustrations, Rive animation and voice work.
     span: normal
     fit: cover
     redact: false
   - rive: ./rive/goally-penguin.riv
     stateMachine: moodTracker
     caption: Goally habit tracker, finish your habits to give the penguin a shower
+    span: normal
+    fit: cover
+    redact: false
   - rive: ./rive/feeder-dog.riv
     caption: Portion picker experiment, the dog grows with the portion
     span: tall
+    fit: cover
+    redact: false
   - stack:
       - shots/freelance-coponcho-desktop.png
       - shots/freelance-coponcho-mobile.png
-    caption: Coponcho, brand and website redesign, picked over a competing design
+    caption: Coponcho, brand and website redesign, made at Solidaris and picked over
+      a competing design
     span: normal
     fit: cover
     redact: false
