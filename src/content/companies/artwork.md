@@ -14,6 +14,14 @@ shots:
       - ./shots/artwork-album-05.webp
       - ./shots/artwork-album-06.webp
       - ./shots/artwork-album-07.webp
+      - ./shots/artwork-album-09.webp
+      - ./shots/artwork-album-10.webp
+      - ./shots/artwork-album-11.webp
+      - ./shots/artwork-album-12.webp
+      - ./shots/artwork-album-13.webp
+      - ./shots/artwork-album-14.webp
+      - ./shots/artwork-album-15.webp
+      - ./shots/artwork-album-16.webp
     caption: Fictional album covers
     unit: covers
   - stack:
