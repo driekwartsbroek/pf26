@@ -58,17 +58,17 @@ prototypes:
     width: 1440
 shots:
   - image: shots/solidaris-01.png
-    caption: Correction flow in the internal member tool
+    caption: Workflow app for staff, document scanning and task tracking in one
     span: wide
     fit: cover
     redact: false
   - image: shots/solidaris-03.png
-    caption: Contact page in the member portal
+    caption: Customer zone, redesigned from scratch with a colleague
     span: normal
     fit: cover
     redact: false
   - image: shots/solidaris-04.png
-    caption: Social work case overview for staff
+    caption: Social work app, member files and support for care at home
     span: normal
     fit: cover
     redact: false

@@ -37,18 +37,18 @@ did:
   - title: New modules, same system
     text: Contract views and new modules inside the existing design system, down to
       the validations.
-  - title: Two ways of working both ways
+  - title: Two ways of working
     text: Sprints at Attentia, large specification documents for the Flemish
       government.
 methods:
-  - UML
   - BPMN
-  - User stories
-  - Acceptance testing
-  - Wireframing
-  - SQL
-  - Azure DevOps
+  - UML
   - Sparx Enterprise Architect
+  - User stories
+  - Azure DevOps
+  - SQL
+  - Figma
+  - Scrum
 prototypesPlacement: top
 ---
 Functional analyst at Tobania, part of Sopra Steria, placed with Attentia and later the Flemish government. On Attentia's employee management app I mapped the processes and wrote the user stories, and for the first time designed the screens myself. It's where I learned everything that happens before design starts and after it ships, and where I fell for UI design.

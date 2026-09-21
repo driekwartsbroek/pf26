@@ -29,6 +29,7 @@ shots:
     unit: concepts
   - link: https://www.youtube.com/volksgeist
     caption: Volksgeist on YouTube, 880k subscribers
+    text: Stories about the modern world, by Philip D'Amico. I designed the channel's logo.
   - image: ./shots/artwork-rust-cohle.webp
     caption: True Detective fan art, Rust Cohle
   - link: https://granaatvlinder.tumblr.com/

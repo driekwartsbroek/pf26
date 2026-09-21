@@ -10,6 +10,8 @@ const education = [
   { years: '2015 → 2016', what: 'Graphics and Digital Media', where: 'Arteveldehogeschool', note: '' },
 ];
 
+const tools = ['Figma', 'Framer', 'Rive', 'Contentsquare', 'zeroheight', 'Photoshop', 'HTML and CSS', 'AI prototyping'];
+
 const certs = [
   { year: '2026', what: 'Experience Analytics Web Fundamentals', where: 'Contentsquare' },
   { year: '2023', what: 'Verified Designer, UX Design Foundations, Typography, UI Components, Design Composition, Figma', where: 'Uxcel' },
@@ -23,11 +25,37 @@ const certs = [
   <article class="about">
     <header>
       <h1>About</h1>
-      <p class="lede">
-        I studied economics, then taught myself design. I like SaaS products with real workflows behind them, and I do my best work sitting inside a
-        product team, talking to developers every day.
-      </p>
+      <p class="lede">I studied economics, spent my first years as an analyst, and taught myself design along the way.</p>
     </header>
+
+    <section class="story">
+      <h2 class="muted">How I got here</h2>
+      <div class="prose surface">
+        <p>
+          At Colruyt I learned to take processes apart. At Tobania I wrote the stories developers built from, and on Attentia's employee app I
+          designed my first screens. Solidaris gave me room to set up design for a whole organisation, and at P&amp;V I lead a website redesign
+          and build the tooling around it.
+        </p>
+        <p>
+          On the side I've designed apps with developer friends, made album covers and fan art, and drew the logo for a YouTube channel with
+          over 880,000 subscribers.
+        </p>
+      </div>
+    </section>
+
+    <section class="story">
+      <h2 class="muted">How I work best</h2>
+      <div class="prose surface">
+        <p>
+          Inside a product team, talking to developers every day. I prototype early, often straight in code, and settle design debates with
+          data. The analyst in me still asks where something comes from and where it goes next.
+        </p>
+        <p>I care about the details nobody asked for: the validation that saves a support call, the empty state that makes someone smile.</p>
+      </div>
+      <ul class="tools">
+        {tools.map((t) => <li>{t}</li>)}
+      </ul>
+    </section>
 
     <section>
       <h2 class="muted">Education</h2>
@@ -101,6 +129,32 @@ const certs = [
     font-size: 13px;
     font-weight: 400;
     margin: 0 0 10px 2px;
+  }
+  .prose {
+    display: grid;
+    gap: 12px;
+    padding: 20px 22px;
+    border-radius: var(--r);
+    font-size: 15px;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  .tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .tools li {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 12px;
+    font-weight: 500;
   }
   .rows {
     border-radius: var(--r);
