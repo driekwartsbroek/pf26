@@ -90,6 +90,12 @@ content:
         label: Tools and methods (also shown on NDA pages)
         type: string
         list: true
+      - name: prototypesPlacement
+        label: Prototypes placement
+        type: select
+        default: top
+        options:
+          values: [top, bottom]
       - name: prototypes
         label: Live prototypes
         type: object

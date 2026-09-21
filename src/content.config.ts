@@ -32,6 +32,8 @@ const companies = defineCollection({
       ),
       did: blank(z.array(z.object({ title: z.string(), text: blank(z.string().optional()) })).default([])),
       methods: blank(z.array(z.string()).default([])),
+      // Where the prototypes sit: above the tiles (default) or below them.
+      prototypesPlacement: blank(z.enum(['top', 'bottom']).default('top')),
       // Live prototypes (Framer, Figma, ProtoPie...). Loaded on click, playable in place.
       prototypes: blank(
         z

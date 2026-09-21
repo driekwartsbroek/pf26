@@ -8,16 +8,29 @@ nda: false
 kind: design
 flow:
   title: Where I sat
+prototypesPlacement: bottom
 prototypes:
-  - title: Anker
+  - title: Anker, a website against disinformation
     url: https://favorite-products-578563.framer.app/
-    caption: Website for a newspaper
     device: desktop
     embed: true
     width: 1440
 shots:
   - link: https://getgoally.com/goally-apps/polar-bank/
-    caption: Polar Bank, a game app for Goally
+    caption: Polar Bank, a counting game for Goally
+    text: A counting game for kids with learning disabilities. Design, original illustrations, Rive animation and voice work.
+    span: normal
+    fit: cover
+    redact: false
+  - stack:
+      - shots/freelance-coponcho-desktop.png
+      - shots/freelance-coponcho-mobile.png
+    caption: Coponcho, brand and website redesign, picked over a competing design
+    span: normal
+    fit: cover
+    redact: false
+  - link: https://www.coponcho.be/
+    caption: Coponcho, live and still in use
     span: normal
     fit: cover
     redact: false
@@ -30,7 +43,7 @@ shots:
       - shots/freelance-chat-05.png
       - shots/freelance-chat-06.png
       - shots/freelance-chat-07-personas.webp
-    caption: Snowball, talk to real people
+    caption: Snowball, an anonymous chat idea, built with a developer friend
     span: normal
     fit: cover
     redact: false
@@ -38,19 +51,7 @@ shots:
       - shots/freelance-ronks-01.webp
       - shots/freelance-ronks-02.webp
       - shots/freelance-ronks-03.webp
-    caption: Ronks, a web app for building album and movie grids
-    span: normal
-    fit: cover
-    redact: false
-  - stack:
-      - shots/freelance-coponcho-desktop.png
-      - shots/freelance-coponcho-mobile.png
-    caption: Coponcho, a website for informal carers
-    span: normal
-    fit: cover
-    redact: false
-  - link: https://www.coponcho.be/
-    caption: Coponcho, the live site
+    caption: Ronks, an album cover music ranker, early screens
     span: normal
     fit: cover
     redact: false
