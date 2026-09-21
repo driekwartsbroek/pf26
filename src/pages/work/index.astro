@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import Sticker from '../../components/Sticker.astro';
-import { companies, url, years } from '../../lib/util';
+import { companies, isJob, url, years } from '../../lib/util';
 
 const portraits = import.meta.glob<{ default: ImageMetadata }>('../../assets/portrait.{jpg,jpeg,png,webp,svg}', { eager: true });
 const portrait = Object.values(portraits)[0].default;
@@ -43,7 +43,9 @@ const line = (deg: number) => {
     y2: 50 + 50 * Math.sin(a),
   };
 };
-const first = list.at(-1)!.data.start.slice(0, 4);
+const jobs = list.filter(isJob);
+const places = jobs.length;
+const first = jobs.map((c) => c.data.start!).sort()[0]?.slice(0, 4);
 ---
 
 <Base layer="ring" title="Work" up={url('/')}>
@@ -94,7 +96,7 @@ const first = list.at(-1)!.data.start.slice(0, 4);
     </div>
 
     <p class="hint muted">
-      {n} places since {first}.
+      {places} places since {first}{n > places ? ', plus artwork' : ''}.
       <span class="keys"><kbd>←</kbd><kbd>→</kbd> move <kbd>Esc</kbd> back</span>
     </p>
   </section>

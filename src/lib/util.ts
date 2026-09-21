@@ -9,6 +9,9 @@ export function url(path = '/') {
   return `${base}${clean}` || '/';
 }
 
+/** Entries with dates are jobs; entries without (like artwork) are side work. */
+export const isJob = (c: Company) => Boolean(c.data.start);
+
 export async function companies() {
   return (await getCollection('companies')).sort((a, b) => a.data.order - b.data.order);
 }
@@ -16,11 +19,13 @@ export async function companies() {
 const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
 const toDate = (m: string) => new Date(`${m}-01T00:00:00Z`);
 
-export function period(start: string, end?: string) {
+export function period(start?: string, end?: string) {
+  if (!start) return 'Over the years';
   return `${fmt.format(toDate(start))} → ${end ? fmt.format(toDate(end)) : 'now'}`;
 }
 
-export function years(start: string, end?: string) {
+export function years(start?: string, end?: string) {
+  if (!start) return 'Over the years';
   const a = start.slice(0, 4);
   const b = end ? end.slice(0, 4) : 'now';
   return a === b ? a : `${a} → ${b}`;

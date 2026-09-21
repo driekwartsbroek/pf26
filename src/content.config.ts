@@ -13,7 +13,7 @@ const companies = defineCollection({
     z.object({
       name: z.string(),
       role: z.string(),
-      start: month,
+      start: blank(month.optional()), // leave empty for work that spans years, like artwork
       end: blank(month.optional()),
       order: z.number(),
       accent: blank(z.string().default('#151515')),
@@ -60,6 +60,7 @@ const companies = defineCollection({
               image: blank(image().optional()),
               link: blank(z.url().optional()),
               stack: blank(z.array(image()).optional()),
+              unit: blank(z.string().optional()), // stacks: what to call the items, e.g. "covers" (default "screens")
               rive: blank(z.string().optional()), // a Rive file in companies/rive, e.g. ./rive/penguin.riv
               stateMachine: blank(z.string().optional()), // optional; the file's first state machine runs by default
               caption: z.string(),

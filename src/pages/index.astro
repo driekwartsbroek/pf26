@@ -5,11 +5,12 @@ import Clock from '../components/Clock.astro';
 import Sticker from '../components/Sticker.astro';
 import RivePlayer from '../components/RivePlayer.astro';
 import { site } from '../lib/site';
-import { companies, url } from '../lib/util';
+import { companies, isJob, url } from '../lib/util';
 
 const portraits = import.meta.glob<{ default: ImageMetadata }>('../assets/portrait.{jpg,jpeg,png,webp,svg}', { eager: true });
 const portrait = Object.values(portraits)[0].default;
 const list = await companies();
+const places = list.filter(isJob).length;
 ---
 
 <Base layer="me" next={url('/work')}>
@@ -41,7 +42,7 @@ const list = await companies();
         </span>
         <span class="label">
           <span>See the work</span>
-          <span class="muted">{list.length} places</span>
+          <span class="muted">{places} places{list.length > places ? ' and artwork' : ''}</span>
         </span>
         <kbd aria-hidden="true">→</kbd>
       </a>

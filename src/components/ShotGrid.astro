@@ -9,6 +9,7 @@ interface Shot {
   stack?: ImageMetadata[];
   rive?: string;
   stateMachine?: string;
+  unit?: string;
   caption: string;
   title?: string;
   text?: string;
@@ -90,7 +91,8 @@ const items: Item[] = await Promise.all(
                 type="button"
                 data-stack={JSON.stringify(s.pile)}
                 data-caption={s.caption}
-                aria-label={`Open ${s.pile.length} screens: ${s.caption}`}
+                data-unit={s.unit ?? 'screens'}
+                aria-label={`Open ${s.pile.length} ${s.unit ?? 'screens'}: ${s.caption}`}
               >
                 <span class:list={['pile', { wide: s.pile.filter((p) => p.w > p.h).length > s.pile.length / 2 }]} aria-hidden="true">
                   {s.pile
@@ -102,7 +104,7 @@ const items: Item[] = await Promise.all(
                 </span>
                 <span class="count">
                   <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="currentColor" /><rect x="9" y="2" width="5" height="5" rx="1.2" fill="currentColor" /><rect x="2" y="9" width="5" height="5" rx="1.2" fill="currentColor" /><rect x="9" y="9" width="5" height="5" rx="1.2" fill="currentColor" /></svg>
-                  {s.pile.length} screens
+                  {s.pile.length} {s.unit ?? 'screens'}
                 </span>
               </button>
             ) : s.link && s.preview ? (
@@ -170,7 +172,7 @@ const items: Item[] = await Promise.all(
 
 <dialog class="stackview" aria-label="Screens">
   <div class="sv-bar">
-    <button class="pill sv-back" type="button" hidden>← All screens</button>
+    <button class="pill sv-back" type="button" hidden>← All <span class="sv-unit">screens</span></button>
     <p class="sv-title"></p>
     <span class="sv-count num muted"></span>
     <button class="pill sv-close" type="button">Close <kbd>Esc</kbd></button>
@@ -840,6 +842,7 @@ const items: Item[] = await Promise.all(
     const count = dlg.querySelector('.sv-count')!;
     type Shot = { thumb: string; full: string };
     let shots: Shot[] = [];
+    let unit = 'screens';
     let at = -1;
     const pad = (n: number) => String(n).padStart(2, '0');
     const vt = (fn: () => void) =>
@@ -850,7 +853,7 @@ const items: Item[] = await Promise.all(
       focus.hidden = true;
       grid.hidden = false;
       back.hidden = true;
-      count.textContent = `${shots.length} screens`;
+      count.textContent = `${shots.length} ${unit}`;
     };
     const showOne = (i: number) => {
       at = (i + shots.length) % shots.length;
@@ -868,6 +871,8 @@ const items: Item[] = await Promise.all(
     piles.forEach((pile) =>
       pile.addEventListener('click', () => {
         shots = JSON.parse(pile.dataset.stack!);
+        unit = pile.dataset.unit ?? 'screens';
+        dlg.querySelector('.sv-unit')!.textContent = unit;
         title.textContent = pile.dataset.caption ?? '';
         grid.replaceChildren(
           ...shots.map((sh, i) => {

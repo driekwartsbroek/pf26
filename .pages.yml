@@ -24,10 +24,9 @@ content:
         type: string
         required: true
       - name: start
-        label: Start (YYYY-MM)
+        label: Start (YYYY-MM, leave empty for side work like artwork)
         type: string
-        required: true
-        pattern: ^\d{4}-\d{2}$
+        pattern: ^(\d{4}-\d{2})?$
       - name: end
         label: End (YYYY-MM, leave empty if current)
         type: string
@@ -144,6 +143,9 @@ content:
             label: Stack (several screens piled up; opens as a grid)
             type: image
             list: true
+          - name: unit
+            label: Stack item name (e.g. covers, concepts; default screens)
+            type: string
           - name: rive
             label: Rive file (e.g. ./rive/penguin.riv; put the file in src/content/companies/rive)
             type: string
