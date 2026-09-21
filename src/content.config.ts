@@ -4,6 +4,9 @@ import { z } from 'astro/zod';
 
 const month = z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-MM');
 
+// Pages CMS saves untouched fields as empty strings or nulls. Treat those as "not set".
+const blank = <T extends z.ZodType>(schema: T) => z.preprocess((v) => (v === '' || v === null ? undefined : v), schema);
+
 const companies = defineCollection({
   loader: glob({ pattern: '*.md', base: './src/content/companies' }),
   schema: ({ image }) =>
@@ -11,55 +14,61 @@ const companies = defineCollection({
       name: z.string(),
       role: z.string(),
       start: month,
-      end: month.optional(),
+      end: blank(month.optional()),
       order: z.number(),
-      accent: z.string().default('#151515'),
-      clients: z.array(z.string()).default([]),
+      accent: blank(z.string().default('#151515')),
+      clients: blank(z.array(z.string()).default([])),
       // 'analysis' pages lead with a flow, sticky notes and methods instead of screens.
-      kind: z.enum(['design', 'analysis']).default('design'),
+      kind: blank(z.enum(['design', 'analysis']).default('design')),
       // Current or confidential job: the page shows one large NDA panel instead of work.
-      nda: z.boolean().default(false),
-      flow: z
-        .object({
-          title: z.string().default('Where I sat'),
-          steps: z.array(z.object({ label: z.string(), you: z.boolean().default(false) })),
-        })
-        .optional(),
-      did: z.array(z.object({ title: z.string(), text: z.string().optional() })).default([]),
-      methods: z.array(z.string()).default([]),
+      nda: blank(z.boolean().default(false)),
+      flow: blank(
+        z
+          .object({
+            title: blank(z.string().default('Where I sat')),
+            steps: blank(z.array(z.object({ label: z.string(), you: blank(z.boolean().default(false)) })).default([])),
+          })
+          .optional(),
+      ),
+      did: blank(z.array(z.object({ title: z.string(), text: blank(z.string().optional()) })).default([])),
+      methods: blank(z.array(z.string()).default([])),
       // Live prototypes (Framer, Figma, ProtoPie...). Loaded on click, playable in place.
-      prototypes: z
+      prototypes: blank(
+        z
         .array(
           z.object({
             title: z.string(),
-            url: z.url().optional(), // leave empty for a placeholder slot
-            caption: z.string().optional(),
-            device: z.enum(['desktop', 'mobile']).default('desktop'),
-            poster: image().optional(),
-            embed: z.boolean().default(true),
+            url: blank(z.url().optional()), // leave empty for a placeholder slot
+            caption: blank(z.string().optional()),
+            device: blank(z.enum(['desktop', 'mobile']).default('desktop')),
+            poster: blank(image().optional()),
+            embed: blank(z.boolean().default(true)),
             // Width the prototype was designed at. Desktop ones open in a large window at this width, scaled to fit.
-            width: z.number().default(1440),
+            width: blank(z.number().default(1440)),
           }),
         )
         .default([]),
-      shots: z
+      ),
+      shots: blank(
+        z
         .array(
           z
             .object({
               // A tile is a screen (image), a link (link, optional image as cover) or a pile of screens (stack).
-              image: image().optional(),
-              link: z.url().optional(),
-              stack: z.array(image()).optional(),
+              image: blank(image().optional()),
+              link: blank(z.url().optional()),
+              stack: blank(z.array(image()).optional()),
               caption: z.string(),
-              title: z.string().optional(), // link tiles: overrides the page's own title
-              text: z.string().optional(), // link tiles: overrides the page's own description
-              span: z.enum(['normal', 'wide', 'tall']).default('normal'),
-              fit: z.enum(['cover', 'contain']).default('cover'),
-              redact: z.boolean().default(false),
+              title: blank(z.string().optional()), // link tiles: overrides the page's own title
+              text: blank(z.string().optional()), // link tiles: overrides the page's own description
+              span: blank(z.enum(['normal', 'wide', 'tall']).default('normal')),
+              fit: blank(z.enum(['cover', 'contain']).default('cover')),
+              redact: blank(z.boolean().default(false)),
             })
             .refine((s) => s.image || s.link || s.stack?.length, 'Each shot needs an image, a link or a stack'),
         )
         .default([]),
+      ),
     }),
 });
 
