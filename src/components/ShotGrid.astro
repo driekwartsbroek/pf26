@@ -99,7 +99,7 @@ const items: Item[] = await Promise.all(
                     .slice(0, 4)
                     .reverse()
                     .map((p, k, arr) => (
-                      <img src={p.thumb} alt="" loading="lazy" class:list={{ land: p.w > p.h }} style={`--k:${arr.length - 1 - k}`} width={p.w} height={p.h} />
+                      <img src={p.thumb} alt="" loading="lazy" class:list={{ land: p.w > p.h * 1.15, sq: p.w <= p.h * 1.15 && p.w >= p.h * 0.85 }} style={`--k:${arr.length - 1 - k}`} width={p.w} height={p.h} />
                     ))}
                 </span>
                 <span class="count">
@@ -444,6 +444,13 @@ const items: Item[] = await Promise.all(
     height: auto !important;
     max-width: none;
     max-height: 72%;
+    border-radius: 10px;
+  }
+  /* Square artwork, like album covers: sized by height so the card matches the image exactly */
+  .pile img.sq {
+    width: auto !important;
+    height: 62% !important;
+    max-width: none;
     border-radius: 10px;
   }
   .pile img[style*='--k:0'] { rotate: 0deg; }
