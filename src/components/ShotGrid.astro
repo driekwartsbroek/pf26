@@ -419,12 +419,14 @@ const items: Item[] = await Promise.all(
       radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0) 0 0 / 18px 18px,
       var(--canvas);
   }
+  /* One cell exactly the size of the tile, so every card centres on the tile itself,
+     not on a row stretched by the tallest image. */
   .pile {
-    position: relative;
+    position: absolute;
+    inset: 0;
     display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     place-items: center;
-    width: 100%;
-    height: 100%;
   }
   /* Every image scales proportionally inside the same bounds, so the card is always exactly
      the image: phone screens, square covers, wide screens and paintings alike. */
