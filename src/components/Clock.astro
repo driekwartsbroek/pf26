@@ -1,0 +1,40 @@
+---
+// Local time in Brussels. Server renders a placeholder so there is no layout shift.
+---
+
+<time class="clock num" data-clock><span data-h>--</span><span class="colon">:</span><span data-m>--</span></time>
+
+<style>
+  .clock {
+    display: inline-flex;
+  }
+  .colon {
+    animation: blink 2s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0.25;
+    }
+  }
+</style>
+
+<script>
+  const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', hour12: false });
+  let timer: number | undefined;
+
+  function tick() {
+    const [h, m] = fmt.format(new Date()).split(':');
+    document.querySelectorAll('[data-clock]').forEach((el) => {
+      el.querySelector('[data-h]')!.textContent = h;
+      el.querySelector('[data-m]')!.textContent = m;
+      el.setAttribute('datetime', `${h}:${m}`);
+    });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    clearInterval(timer);
+    if (!document.querySelector('[data-clock]')) return;
+    tick();
+    timer = window.setInterval(tick, 5000);
+  });
+</script>

@@ -1,0 +1,309 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ShotGrid from '../../components/ShotGrid.astro';
+import Sticker from '../../components/Sticker.astro';
+import FigSection from '../../components/FigSection.astro';
+import Flow from '../../components/Flow.astro';
+import Stickies from '../../components/Stickies.astro';
+import Prototypes from '../../components/Prototypes.astro';
+import NdaPanel from '../../components/NdaPanel.astro';
+import { companies, period, url, type Company } from '../../lib/util';
+
+export async function getStaticPaths() {
+  const list = await companies();
+  return list.map((company, i) => ({
+    params: { slug: company.id },
+    props: {
+      company,
+      index: i,
+      total: list.length,
+      prev: list[(i - 1 + list.length) % list.length],
+      next: list[(i + 1) % list.length],
+    },
+  }));
+}
+
+interface Props {
+  company: Company;
+  index: number;
+  total: number;
+  prev: Company;
+  next: Company;
+}
+
+const { company, index, total, prev, next } = Astro.props;
+const { name, role, start, end, clients, accent, shots, kind, flow, did, methods, prototypes, nda } = company.data;
+const { Content } = await render(company);
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<Base
+  layer="company"
+  title={name}
+  description={`${role} at ${name}. Selected interface work by Bert Selleslagh.`}
+  up={url('/work')}
+  prev={url(`/work/${prev.id}`)}
+  next={url(`/work/${next.id}`)}
+  crumb={name}
+>
+  <article class="company" style={`--accent:${accent}`}>
+    <header class="head">
+      <div class="title">
+        <Sticker slug={company.id} accent={accent} size="64px" />
+        <div>
+          <p class="index num muted">{pad(index + 1)} of {pad(total)}</p>
+          <h1>{name}</h1>
+        </div>
+      </div>
+
+      <dl class="facts surface">
+        <div><dt>Role</dt><dd>{role}</dd></div>
+        <div><dt>When</dt><dd class="num">{period(start, end)}</dd></div>
+        {clients.length > 0 && <div><dt>Clients</dt><dd>{clients.join(', ')}</dd></div>}
+      </dl>
+
+      <div class="context"><Content /></div>
+    </header>
+
+    {nda && <NdaPanel company={name} />}
+
+    {
+      !nda && prototypes.length > 0 && (
+        <FigSection label={prototypes.length > 1 ? 'Live prototypes' : 'Live prototype'} class="protos-section">
+          <Prototypes items={prototypes} />
+        </FigSection>
+      )
+    }
+
+    {
+      nda ? null : kind === 'analysis' ? (
+        <div class="analysis">
+          {flow && flow.steps.length > 0 && (
+            <FigSection label={flow.title}>
+              <Flow steps={flow.steps} />
+            </FigSection>
+          )}
+          {did.length > 0 && (
+            <FigSection label="What I did">
+              <Stickies items={did} />
+            </FigSection>
+          )}
+          {methods.length > 0 && (
+            <FigSection label="Tools and methods">
+              <ul class="methods">
+                {methods.map((m) => (
+                  <li>{m}</li>
+                ))}
+              </ul>
+            </FigSection>
+          )}
+          {shots.length > 0 && (
+            <FigSection label="Screens">
+              <ShotGrid shots={shots} company={name} />
+            </FigSection>
+          )}
+        </div>
+      ) : (
+        <ShotGrid shots={shots} company={name} />
+      )
+    }
+  </article>
+
+  <nav class="dock surface" aria-label="Around the wheel" style={`--accent:${accent}`}>
+    <a href={url(`/work/${prev.id}`)} rel="prev" aria-label={`Previous: ${prev.data.name}`}>
+      <span class="arrow" aria-hidden="true">←</span>
+      <span class="dock-name">{prev.data.name}</span>
+    </a>
+    <span class="div" aria-hidden="true"></span>
+    <a href={url('/work')} class="all">
+      <span class="wheel-ico" aria-hidden="true"></span>
+      All work
+    </a>
+    <span class="div" aria-hidden="true"></span>
+    <a href={url(`/work/${next.id}`)} rel="next" aria-label={`Next: ${next.data.name}`}>
+      <span class="dock-name">{next.data.name}</span>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a>
+  </nav>
+</Base>
+
+<style>
+  .company {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: calc(var(--bar) + clamp(32px, 7vh, 88px)) var(--gutter) 140px;
+  }
+
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 28px 48px;
+    margin-bottom: clamp(48px, 8vh, 80px);
+  }
+  .title {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    animation: in 420ms var(--spring) both;
+  }
+  @keyframes in {
+    from {
+      opacity: 0;
+      translate: 0 8px;
+    }
+  }
+  .index {
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+  h1 {
+    font-size: clamp(30px, 4.2vw, 52px);
+    line-height: 1.04;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+
+  .context {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 17px;
+    line-height: 1.55;
+    letter-spacing: -0.012em;
+    text-wrap: pretty;
+  }
+  .context :global(p + p) {
+    margin-top: 0.8em;
+  }
+
+  .facts {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    border-radius: var(--r);
+    padding: 6px 16px;
+    font-size: 13px;
+  }
+  .facts div {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 12px;
+    padding: 10px 0;
+  }
+  .facts div + div {
+    border-top: 1px solid var(--border);
+  }
+  .facts dt {
+    color: var(--muted);
+  }
+
+  .company :global(.protos-section) {
+    margin-bottom: 40px;
+  }
+  .methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .methods li {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 13px;
+    font-weight: 500;
+    transition: translate var(--med) var(--spring);
+  }
+  .methods li:hover {
+    translate: 0 -2px;
+  }
+
+  /* Floating bottom toolbar */
+  .dock {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    z-index: 20;
+    translate: -50% 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 14px;
+    box-shadow: var(--shadow-lg);
+    font-size: 13px;
+    font-weight: 500;
+    animation: dock 420ms 200ms var(--spring) both;
+    view-transition-name: dock;
+  }
+  @keyframes dock {
+    from {
+      opacity: 0;
+      translate: -50% 16px;
+    }
+  }
+  .dock a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 9px;
+    white-space: nowrap;
+    transition: background-color var(--fast), scale var(--med) var(--spring);
+  }
+  .dock a:hover {
+    background: var(--hover);
+  }
+  .dock a:active {
+    scale: 0.96;
+  }
+  .dock a[rel='prev']:hover .arrow {
+    translate: -3px 0;
+  }
+  .dock-name {
+    max-width: 16ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .div {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+  }
+  .wheel-ico {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: conic-gradient(from -36deg, var(--accent) 0 72deg, #d9d9d6 0 144deg, #c9c9c6 0 216deg, #d9d9d6 0 288deg, #c9c9c6 0);
+    -webkit-mask: radial-gradient(circle, transparent 3px, #000 3.5px);
+    mask: radial-gradient(circle, transparent 3px, #000 3.5px);
+  }
+
+  @media (max-width: 860px) {
+    .head {
+      grid-template-columns: 1fr;
+    }
+    .context,
+    .facts {
+      grid-column: 1;
+      grid-row: auto;
+    }
+    .context {
+      font-size: 16px;
+    }
+  }
+  @media (max-width: 520px) {
+    .dock-name {
+      display: none;
+    }
+    .dock {
+      bottom: 14px;
+    }
+  }
+</style>

@@ -1,0 +1,336 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Sticker from '../../components/Sticker.astro';
+import { companies, url, years } from '../../lib/util';
+
+const portraits = import.meta.glob<{ default: ImageMetadata }>('../../assets/portrait.{jpg,jpeg,png,webp,svg}', { eager: true });
+const portrait = Object.values(portraits)[0].default;
+const list = await companies();
+const n = list.length;
+const INNER = 0.38; // centre circle diameter as a share of the wheel
+
+const pt = (deg: number, r: number) => {
+  const a = (deg * Math.PI) / 180;
+  return `${(50 + r * Math.cos(a)).toFixed(3)}% ${(50 + r * Math.sin(a)).toFixed(3)}%`;
+};
+
+// One annular sector per company, the first centred at 12 o'clock.
+const wedges = list.map((c, i) => {
+  const a0 = -90 - 180 / n + (i * 360) / n;
+  const a1 = a0 + 360 / n;
+  const steps = 18;
+  const outer = Array.from({ length: steps + 1 }, (_, k) => pt(a0 + ((a1 - a0) * k) / steps, 50));
+  const inner = Array.from({ length: steps + 1 }, (_, k) => pt(a1 - ((a1 - a0) * k) / steps, 50 * INNER));
+  const mid = ((a0 + a1) / 2) * (Math.PI / 180);
+  const r = (50 + 50 * INNER) / 2;
+  return {
+    c,
+    i,
+    a0,
+    clip: `polygon(${[...outer, ...inner].join(', ')})`,
+    x: 50 + r * Math.cos(mid),
+    y: 50 + r * Math.sin(mid),
+  };
+});
+
+const line = (deg: number) => {
+  const a = (deg * Math.PI) / 180;
+  return {
+    x1: 50 + 50 * INNER * Math.cos(a),
+    y1: 50 + 50 * INNER * Math.sin(a),
+    x2: 50 + 50 * Math.cos(a),
+    y2: 50 + 50 * Math.sin(a),
+  };
+};
+const first = list.at(-1)!.data.start.slice(0, 4);
+---
+
+<Base layer="ring" title="Work" up={url('/')}>
+  <section class="wrap">
+    <h1 class="sr-only">Work</h1>
+    <div class="wheel" style={`--inner:${INNER * 100}%`} data-wheel>
+      {
+        wedges.map(({ c, i, clip, x, y }) => (
+          <a
+            class="wedge"
+            href={url(`/work/${c.id}`)}
+            style={`clip-path:${clip}; --x:${x}%; --y:${y}%; --i:${i}`}
+            data-i={i}
+            aria-label={`${c.data.name}, ${c.data.role}, ${years(c.data.start, c.data.end)}`}
+          >
+            <span class="icon">
+              <Sticker slug={c.id} accent={c.data.accent} size="clamp(34px, 9vmin, 52px)" />
+              <span class="name">{c.data.name.split(' ')[0]}</span>
+            </span>
+          </a>
+        ))
+      }
+
+      <svg class="lines" viewBox="0 0 100 100" aria-hidden="true">
+        {
+          wedges.map(({ a0 }) => {
+            const l = line(a0);
+            return <line {...l} vector-effect="non-scaling-stroke" />;
+          })
+        }
+      </svg>
+
+      <a class="center" href={url('/')} aria-label="Back to me">
+        <span class="face" transition:name="me">
+          <Image src={portrait} alt="" widths={[96, 192]} sizes="64px" />
+        </span>
+        <span class="back">Back to me</span>
+        {
+          list.map((c, i) => (
+            <span class="info" data-i={i} aria-hidden="true">
+              <strong>{c.data.name}</strong>
+              <span>{c.data.role}</span>
+              <span class="num">{years(c.data.start, c.data.end)}</span>
+            </span>
+          ))
+        }
+      </a>
+    </div>
+
+    <p class="hint muted">
+      {n} places since {first}.
+      <span class="keys"><kbd>←</kbd><kbd>→</kbd> move <kbd>Esc</kbd> back</span>
+    </p>
+  </section>
+</Base>
+
+<style>
+  .wrap {
+    min-height: 100svh;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 28px;
+    padding: var(--bar) var(--gutter) var(--gutter);
+  }
+
+  .wheel {
+    position: relative;
+    width: min(86vw, 62svh, 480px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    animation: open 460ms var(--spring) both;
+  }
+  @keyframes open {
+    from {
+      opacity: 0;
+      scale: 0.82;
+      rotate: -12deg;
+    }
+  }
+
+  .wedge {
+    position: absolute;
+    inset: 0;
+    transition: background-color var(--fast);
+    outline: none;
+  }
+  .wedge:hover,
+  .wedge:focus-visible {
+    background: var(--hover);
+  }
+  .wedge:active {
+    background: #ebebea;
+  }
+
+  .icon {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    translate: -50% -50%;
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    animation: stick 420ms var(--spring) both;
+    animation-delay: calc(120ms + var(--i) * 45ms);
+  }
+  @keyframes stick {
+    from {
+      opacity: 0;
+      scale: 0.4;
+    }
+  }
+  .icon :global(.sticker) {
+    transition: scale var(--med) var(--spring), rotate var(--med) var(--spring);
+  }
+  .wedge:hover .icon :global(.sticker),
+  .wedge:focus-visible .icon :global(.sticker) {
+    scale: 1.16;
+    rotate: -6deg;
+  }
+  .wedge:active .icon :global(.sticker) {
+    scale: 1.04;
+  }
+  .name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: color var(--fast);
+  }
+  .wedge:hover .name,
+  .wedge:focus-visible .name {
+    color: var(--ink);
+  }
+
+  .lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  .center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--inner);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--border), inset 0 1px 2px rgb(0 0 0 / 0.04);
+    text-align: center;
+    transition: background-color var(--fast);
+  }
+  .center > * {
+    grid-area: 1 / 1;
+    transition: opacity var(--fast), scale var(--med) var(--spring), translate var(--med) var(--spring);
+  }
+  .center:hover {
+    background: var(--hover);
+  }
+
+  .face {
+    width: 42%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--canvas);
+    box-shadow: 0 0 0 1px var(--border);
+  }
+  .face :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .back {
+    align-self: end;
+    margin-bottom: 16%;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    opacity: 0;
+    translate: 0 4px;
+  }
+  .center:hover .back,
+  .center:focus-visible .back {
+    opacity: 1;
+    translate: 0 0;
+  }
+  .center:hover .face,
+  .center:focus-visible .face {
+    translate: 0 -8px;
+  }
+
+  .info {
+    display: grid;
+    gap: 1px;
+    max-width: 82%;
+    font-size: 11.5px;
+    line-height: 1.3;
+    color: var(--muted);
+    opacity: 0;
+    scale: 0.92;
+    pointer-events: none;
+  }
+  .info strong {
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    text-wrap: balance;
+  }
+  .wheel[data-active] .face {
+    opacity: 0;
+    scale: 0.8;
+  }
+  .wheel[data-active='0'] .info[data-i='0'],
+  .wheel[data-active='1'] .info[data-i='1'],
+  .wheel[data-active='2'] .info[data-i='2'],
+  .wheel[data-active='3'] .info[data-i='3'],
+  .wheel[data-active='4'] .info[data-i='4'],
+  .wheel[data-active='5'] .info[data-i='5'],
+  .wheel[data-active='6'] .info[data-i='6'],
+  .wheel[data-active='7'] .info[data-i='7'] {
+    opacity: 1;
+    scale: 1;
+  }
+
+  .hint {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px 14px;
+    font-size: 13px;
+    animation: fade 300ms 400ms both;
+  }
+  .keys {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .keys kbd:nth-of-type(3) {
+    margin-left: 8px;
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+  @media (pointer: coarse) {
+    .keys {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const wheel = document.querySelector<HTMLElement>('[data-wheel]');
+    if (!wheel) return;
+    const wedges = [...wheel.querySelectorAll<HTMLAnchorElement>('.wedge')];
+
+    const show = (i: number | null) => (i === null ? wheel.removeAttribute('data-active') : (wheel.dataset.active = String(i)));
+    wedges.forEach((w, i) => {
+      w.addEventListener('pointerenter', () => show(i));
+      w.addEventListener('focus', () => show(i));
+      w.addEventListener('pointerleave', () => show(null));
+      w.addEventListener('blur', () => show(null));
+    });
+
+    // Arrow keys walk around the wheel; the first press lands on the top wedge.
+    const onKey = (e: KeyboardEvent) => {
+      if (!document.contains(wheel)) return removeEventListener('keydown', onKey);
+      const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      const at = wedges.indexOf(document.activeElement as HTMLAnchorElement);
+      wedges[at < 0 ? 0 : (at + step + wedges.length) % wedges.length].focus();
+    };
+    addEventListener('keydown', onKey);
+  });
+</script>

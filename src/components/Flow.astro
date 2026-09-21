@@ -1,0 +1,158 @@
+---
+// A small FigJam diagram: shapes joined by connectors, with a cursor on the step that was mine.
+import { site } from '../lib/site';
+
+interface Props {
+  steps: { label: string; you: boolean }[];
+}
+const { steps } = Astro.props;
+const firstName = site.name.split(' ')[0];
+---
+
+<ol class="flow">
+  {
+    steps.map((s, i) => (
+      <li class:list={['step', { you: s.you }]} style={`--i:${i}`}>
+        <span class="node">
+          <span class="n num">{String(i + 1).padStart(2, '0')}</span>
+          {s.label}
+        </span>
+        {s.you && (
+          <span class="me" aria-label={`${firstName} worked here`}>
+            <svg width="14" height="16" viewBox="0 0 18 20" aria-hidden="true">
+              <path d="M1 1l15 7.5-6.5 1.8L6.2 18z" fill="#0d99ff" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" />
+            </svg>
+            <span>{firstName}</span>
+          </span>
+        )}
+        {i < steps.length - 1 && <span class="link" aria-hidden="true" />}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 36px;
+    padding: 8px 0 20px;
+  }
+  .step {
+    position: relative;
+    display: flex;
+    align-items: center;
+    animation: node-in 420ms var(--spring) both;
+    animation-delay: calc(120ms + var(--i) * 70ms);
+  }
+  @keyframes node-in {
+    from {
+      opacity: 0;
+      scale: 0.85;
+    }
+  }
+  .node {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 13px;
+    border-radius: 11px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: translate var(--med) var(--spring), box-shadow var(--med) var(--snap);
+  }
+  .node:hover {
+    translate: 0 -2px;
+    box-shadow: var(--shadow-lg);
+  }
+  .n {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--faint);
+  }
+  .you .node {
+    box-shadow: 0 0 0 2px var(--accent), 0 6px 16px -6px rgb(0 0 0 / 0.18);
+  }
+  .you .n {
+    color: var(--accent);
+  }
+
+  /* Connector with an arrowhead, like FigJam's elbow-less line */
+  .link {
+    position: relative;
+    width: 26px;
+    height: 1.5px;
+    margin: 0 3px;
+    background: var(--faint);
+  }
+  .link::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-top: 1.5px solid var(--faint);
+    border-right: 1.5px solid var(--faint);
+    translate: 0 -50%;
+    rotate: 45deg;
+  }
+
+  .me {
+    position: absolute;
+    left: calc(100% - 64px);
+    top: calc(100% - 6px);
+    display: flex;
+    align-items: flex-start;
+    pointer-events: none;
+    animation: me-idle 6s ease-in-out infinite;
+  }
+  .me span {
+    margin: 11px 0 0 -3px;
+    padding: 1px 6px;
+    border-radius: 3px 8px 8px 8px;
+    background: #0d99ff;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  @keyframes me-idle {
+    0%, 100% { translate: 0 0; }
+    40% { translate: -6px 3px; }
+    70% { translate: 4px -2px; }
+  }
+
+  @media (max-width: 1080px) {
+    .flow {
+      flex-direction: column;
+      align-items: flex-start;
+      row-gap: 0;
+    }
+    .step {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .link {
+      width: 1.5px;
+      height: 24px;
+      margin: 4px 0 4px 22px;
+    }
+    .link::after {
+      right: auto;
+      left: 50%;
+      top: auto;
+      bottom: -1px;
+      translate: -50% 0;
+      rotate: 135deg;
+    }
+    .me {
+      left: calc(100% + 8px);
+      top: 10px;
+    }
+  }
+</style>

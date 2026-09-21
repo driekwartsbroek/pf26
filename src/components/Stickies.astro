@@ -1,0 +1,80 @@
+---
+// Sticky notes, FigJam style: soft colours, a slight tilt, the author's name at the bottom.
+import { site } from '../lib/site';
+
+interface Props {
+  items: { title: string; text?: string }[];
+}
+const { items } = Astro.props;
+const firstName = site.name.split(' ')[0];
+const COLORS = ['#fff1b8', '#d4ebff', '#cdf4d3', '#ffd8e8', '#e8dcff', '#ffe0c2'];
+const TILT = [-1.2, 0.8, -0.4, 1.1, -0.9, 0.5];
+---
+
+<ul class="stickies">
+  {
+    items.map((it, i) => (
+      <li class="sticky" style={`--bg:${COLORS[i % COLORS.length]}; --tilt:${TILT[i % TILT.length]}deg; --i:${i}`}>
+        <h3>{it.title}</h3>
+        {it.text && <p>{it.text}</p>}
+        <span class="author">{firstName}</span>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .stickies {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 20px;
+  }
+  .sticky {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 200px;
+    padding: 18px 18px 36px;
+    border-radius: 4px;
+    background: var(--bg);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 16px -8px rgb(0 0 0 / 0.16);
+    rotate: var(--tilt);
+    transition: rotate var(--med) var(--spring), translate var(--med) var(--spring), box-shadow var(--med) var(--snap);
+    animation: stick-in 460ms var(--spring) both;
+    animation-delay: calc(160ms + var(--i) * 60ms);
+  }
+  @keyframes stick-in {
+    from {
+      opacity: 0;
+      scale: 0.9;
+      translate: 0 8px;
+    }
+  }
+  .sticky:hover {
+    rotate: 0deg;
+    translate: 0 -3px;
+    box-shadow: 0 2px 4px rgb(0 0 0 / 0.06), 0 18px 28px -12px rgb(0 0 0 / 0.22);
+  }
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  p {
+    font-size: 14px;
+    line-height: 1.45;
+    color: rgb(0 0 0 / 0.68);
+    text-wrap: pretty;
+  }
+  .author {
+    position: absolute;
+    left: 18px;
+    bottom: 12px;
+    font-size: 11px;
+    color: rgb(0 0 0 / 0.42);
+  }
+</style>

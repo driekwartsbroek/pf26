@@ -1,0 +1,879 @@
+---
+import { Image, getImage } from 'astro:assets';
+import { linkPreview, type Preview } from '../lib/linkPreview';
+
+interface Shot {
+  image?: ImageMetadata;
+  link?: string;
+  stack?: ImageMetadata[];
+  caption: string;
+  title?: string;
+  text?: string;
+  span: 'normal' | 'wide' | 'tall';
+  fit: 'cover' | 'contain';
+  redact: boolean;
+}
+interface Props {
+  shots: Shot[];
+  company: string;
+}
+
+const { shots, company } = Astro.props;
+
+type Item = Shot & {
+  tiny: string;
+  full: string;
+  preview?: Preview & { host: string };
+  pile?: { thumb: string; full: string; w: number; h: number }[];
+};
+
+const items: Item[] = await Promise.all(
+  shots.map(async (s) => {
+    if (s.stack?.length) {
+      const pile = await Promise.all(
+        s.stack.map(async (img) => {
+          const thumb = await getImage({ src: img, width: Math.min(img.width, 520), format: 'webp' });
+          const full = await getImage({ src: img, width: Math.min(img.width, 1600), format: 'webp' });
+          return { thumb: thumb.src, full: full.src, w: img.width, h: img.height };
+        }),
+      );
+      return { ...s, tiny: '', full: '', pile };
+    }
+    if (s.link) {
+      const p = await linkPreview(s.link);
+      return {
+        ...s,
+        tiny: '',
+        full: '',
+        preview: { ...p, title: s.title ?? p.title, text: s.text ?? p.text, host: new URL(s.link).host.replace(/^www\./, '') },
+      };
+    }
+    const img = s.image!;
+    if (s.redact) {
+      // Only a tiny version ships, so the real screen never leaves the repo.
+      const tiny = await getImage({ src: img, width: 36, format: 'webp' });
+      return { ...s, tiny: tiny.src, full: '' };
+    }
+    const full = await getImage({ src: img, width: Math.min(img.width, 2400), format: 'webp' });
+    return { ...s, tiny: '', full: full.src };
+  }),
+);
+---
+
+{
+  items.length === 0 ? (
+    <p class="empty surface muted">Work from {company} is on its way.</p>
+  ) : (
+    <div class="shots">
+      <ul class="grid" data-shots>
+        {items.map((s, i) => (
+          <li class:list={['tile', s.span, s.fit, { redact: s.redact }]} style={`--i:${i}`}>
+            <p class="label">
+              <span class="num">{String(i + 1).padStart(2, '0')}</span>
+              {s.caption}
+            </p>
+            {s.pile ? (
+              <button
+                class="frame stackcard"
+                type="button"
+                data-stack={JSON.stringify(s.pile)}
+                data-caption={s.caption}
+                aria-label={`Open ${s.pile.length} screens: ${s.caption}`}
+              >
+                <span class:list={['pile', { wide: s.pile.filter((p) => p.w > p.h).length > s.pile.length / 2 }]} aria-hidden="true">
+                  {s.pile
+                    .slice(0, 4)
+                    .reverse()
+                    .map((p, k, arr) => (
+                      <img src={p.thumb} alt="" loading="lazy" class:list={{ land: p.w > p.h }} style={`--k:${arr.length - 1 - k}`} width={p.w} height={p.h} />
+                    ))}
+                </span>
+                <span class="count">
+                  <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="currentColor" /><rect x="9" y="2" width="5" height="5" rx="1.2" fill="currentColor" /><rect x="2" y="9" width="5" height="5" rx="1.2" fill="currentColor" /><rect x="9" y="9" width="5" height="5" rx="1.2" fill="currentColor" /></svg>
+                  {s.pile.length} screens
+                </span>
+              </button>
+            ) : s.link && s.preview ? (
+              <a class="frame linkcard" href={s.link} target="_blank" rel="noopener">
+                <span class="lc-cover">
+                  {s.image ? (
+                    <Image src={s.image} alt="" widths={[480, 800, 1200]} sizes="(max-width: 860px) 100vw, 600px" loading="lazy" />
+                  ) : s.preview.image ? (
+                    <img src={s.preview.image} alt="" loading="lazy" referrerpolicy="no-referrer" />
+                  ) : (
+                    <span class="lc-blank" aria-hidden="true">{s.preview.host}</span>
+                  )}
+                </span>
+                <span class="lc-body">
+                  <span class="lc-site">
+                    {s.preview.icon && <img class="lc-icon" src={s.preview.icon} alt="" width="16" height="16" loading="lazy" referrerpolicy="no-referrer" />}
+                    {s.preview.site ?? s.preview.host}
+                  </span>
+                  {s.preview.title && <strong class="lc-title">{s.preview.title}</strong>}
+                  {s.preview.text && <span class="lc-text">{s.preview.text}</span>}
+                  <span class="lc-go">
+                    {s.preview.host}
+                    <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 4.5h5.5V10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  </span>
+                </span>
+              </a>
+            ) : s.redact ? (
+              <div class="frame" aria-label={`${s.caption}, under NDA`} role="img">
+                <img class="blur" src={s.tiny} alt="" />
+                <span class="nda">
+                  <svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><rect x="0.5" y="5" width="9" height="6.5" rx="1.5" fill="currentColor" /><path d="M2.5 5V3.5a2.5 2.5 0 015 0V5" fill="none" stroke="currentColor" stroke-width="1.4" /></svg>
+                  Under NDA. Happy to walk through it on a call.
+                </span>
+              </div>
+            ) : (
+              <button class="frame" type="button" data-full={s.full} data-caption={s.caption} aria-label={`Open ${s.caption}`}>
+                <Image
+                  src={s.image!}
+                  alt={s.caption}
+                  widths={[480, 800, 1200, 1800].filter((w) => w <= s.image!.width)}
+                  sizes={s.span === 'wide' ? '(max-width: 860px) 100vw, 1200px' : '(max-width: 860px) 100vw, 600px'}
+                  loading={i < 2 ? 'eager' : 'lazy'}
+                />
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+<dialog class="lightbox" aria-label="Image viewer">
+  <img alt="" />
+  <div class="lb-bar">
+    <p class="lb-caption"></p>
+    <div class="lb-actions">
+      <span class="lb-count num muted"></span>
+      <button class="pill icon lb-prev" type="button" aria-label="Previous image">←</button>
+      <button class="pill icon lb-next" type="button" aria-label="Next image">→</button>
+      <button class="pill lb-close" type="button">Close <kbd>Esc</kbd></button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="stackview" aria-label="Screens">
+  <div class="sv-bar">
+    <button class="pill sv-back" type="button" hidden>← All screens</button>
+    <p class="sv-title"></p>
+    <span class="sv-count num muted"></span>
+    <button class="pill sv-close" type="button">Close <kbd>Esc</kbd></button>
+  </div>
+  <div class="sv-body">
+    <ul class="sv-grid"></ul>
+    <div class="sv-focus" hidden>
+      <button class="pill icon sv-prev" type="button" aria-label="Previous screen">←</button>
+      <img alt="" />
+      <button class="pill icon sv-next" type="button" aria-label="Next screen">→</button>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .shots {
+    container-type: inline-size;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: calc((100cqw - 24px) / 2 * 0.4);
+    grid-auto-flow: row dense;
+    gap: 32px 24px;
+  }
+  .tile {
+    grid-row: span 2;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 8px;
+    min-height: 0;
+    animation: rise 480ms var(--spring) both;
+    animation-delay: calc(var(--i) * 50ms + 80ms);
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      translate: 0 12px;
+      scale: 0.98;
+    }
+  }
+  .tile.wide {
+    grid-column: 1 / -1;
+    grid-row: span 3;
+  }
+  .tile.tall {
+    grid-row: span 4;
+  }
+
+  /* Frame name, like the label above a FigJam frame */
+  .label {
+    display: flex;
+    gap: 8px;
+    padding-left: 2px;
+    font-size: 12px;
+    color: var(--muted);
+    transition: color var(--fast);
+  }
+  .label .num {
+    color: var(--faint);
+  }
+  .tile:hover .label {
+    color: var(--ink);
+  }
+
+  .frame {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r);
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    cursor: zoom-in;
+    isolation: isolate;
+    transition: box-shadow var(--med) var(--snap), translate var(--med) var(--spring);
+  }
+  button.frame:hover {
+    translate: 0 -3px;
+    box-shadow: var(--shadow-lg);
+  }
+  button.frame:active {
+    translate: 0 -1px;
+    transition-duration: var(--fast);
+  }
+  .frame :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .contain .frame {
+    padding: 6%;
+    background: var(--canvas);
+  }
+  .contain .frame :global(img) {
+    object-fit: contain;
+    object-position: center;
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.06)) drop-shadow(0 12px 28px rgb(0 0 0 / 0.1));
+  }
+
+  /* Link tiles: a FigJam-style link preview card */
+  .linkcard {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    color: inherit;
+    text-decoration: none;
+  }
+  a.frame:hover {
+    translate: 0 -3px;
+    box-shadow: var(--shadow-lg);
+  }
+  a.frame:active {
+    translate: 0 -1px;
+  }
+  .lc-cover {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--canvas);
+    border-bottom: 1px solid var(--border);
+  }
+  .lc-cover :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: scale 600ms var(--snap);
+  }
+  .linkcard:hover .lc-cover :global(img) {
+    scale: 1.03;
+  }
+  .lc-blank {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    color: var(--muted);
+    background: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0) 0 0 / 16px 16px;
+  }
+  .lc-body {
+    display: grid;
+    gap: 4px;
+    padding: 14px 16px 16px;
+    text-align: left;
+  }
+  .lc-site {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .lc-icon {
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 4px;
+    flex: none;
+  }
+  .lc-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .lc-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  .lc-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    justify-self: start;
+    margin-top: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--canvas);
+    box-shadow: inset 0 0 0 1px var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color var(--fast);
+  }
+  .lc-go svg {
+    transition: translate var(--med) var(--spring);
+  }
+  .linkcard:hover .lc-go {
+    background: var(--hover);
+  }
+  .linkcard:hover .lc-go svg {
+    translate: 2px -2px;
+  }
+
+  /* Stack tiles: screens lying on top of each other */
+  .stackcard {
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    background:
+      radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0) 0 0 / 18px 18px,
+      var(--canvas);
+  }
+  .pile {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+  }
+  .pile img {
+    grid-area: 1 / 1;
+    width: auto !important;
+    height: 76% !important;
+    max-width: 44%;
+    object-fit: contain;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px var(--border), 0 2px 4px rgb(0 0 0 / 0.06), 0 12px 24px -10px rgb(0 0 0 / 0.25);
+    transition: rotate var(--med) var(--spring), translate var(--med) var(--spring);
+    transition-delay: calc(var(--k) * 25ms);
+  }
+  /* Landscape screens: wider and shorter, same pile */
+  .pile.wide img,
+  .pile img.land {
+    width: 66% !important;
+    height: auto !important;
+    max-width: none;
+    max-height: 72%;
+    border-radius: 10px;
+  }
+  .pile img[style*='--k:0'] { rotate: 0deg; }
+  .pile img[style*='--k:1'] { rotate: 5deg; translate: 10px 4px; }
+  .pile img[style*='--k:2'] { rotate: -6deg; translate: -12px 6px; }
+  .pile img[style*='--k:3'] { rotate: 9deg; translate: 16px 10px; }
+  .stackcard:hover .pile img[style*='--k:0'],
+  .stackcard:focus-visible .pile img[style*='--k:0'] { translate: 0 -6px; }
+  .stackcard:hover .pile img[style*='--k:1'],
+  .stackcard:focus-visible .pile img[style*='--k:1'] { rotate: 10deg; translate: 64px 8px; }
+  .stackcard:hover .pile img[style*='--k:2'],
+  .stackcard:focus-visible .pile img[style*='--k:2'] { rotate: -11deg; translate: -64px 10px; }
+  .stackcard:hover .pile img[style*='--k:3'],
+  .stackcard:focus-visible .pile img[style*='--k:3'] { rotate: 16deg; translate: 118px 22px; }
+  .count {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Stack overlay: grid of screens, then one at a time */
+  .stackview {
+    width: min(1180px, calc(100vw - 32px));
+    height: calc(100dvh - 32px);
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    border: 0;
+    border-radius: 20px;
+    background: var(--canvas);
+    box-shadow: var(--shadow-lg);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .stackview[open] {
+    display: flex;
+    flex-direction: column;
+    animation: sv-in 320ms var(--spring) both;
+  }
+  @keyframes sv-in {
+    from {
+      opacity: 0;
+      scale: 0.96;
+    }
+  }
+  .stackview::backdrop {
+    background: rgb(30 30 30 / 0.4);
+    backdrop-filter: blur(3px);
+  }
+  .sv-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 10px 0 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .sv-back[hidden] {
+    display: none;
+  }
+  .sv-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .sv-close {
+    height: 32px;
+  }
+  .sv-body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    background: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0) 0 0 / 22px 22px;
+  }
+  .sv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 24px;
+    padding: 28px;
+  }
+  .sv-grid[hidden] {
+    display: none;
+  }
+  .sv-grid button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    cursor: zoom-in;
+    animation: sv-pop 380ms var(--spring) both;
+    animation-delay: calc(var(--i) * 35ms);
+    transition: translate var(--med) var(--spring), box-shadow var(--med) var(--snap);
+  }
+  @keyframes sv-pop {
+    from {
+      opacity: 0;
+      scale: 0.9;
+      translate: 0 8px;
+    }
+  }
+  .sv-grid button:hover {
+    translate: 0 -3px;
+    box-shadow: var(--shadow-lg);
+  }
+  .sv-grid img {
+    width: 100%;
+    height: auto;
+  }
+  .sv-focus {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+  }
+  .sv-focus[hidden] {
+    display: none;
+  }
+  .sv-focus img {
+    justify-self: center;
+    max-width: 100%;
+    max-height: calc(100dvh - 32px - 56px - 40px);
+    width: auto;
+    height: auto;
+    border-radius: 18px;
+    box-shadow: var(--shadow-lg);
+  }
+  @media (max-width: 720px) {
+    .stackview {
+      width: 100vw;
+      height: 100dvh;
+      border-radius: 0;
+    }
+    .sv-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      padding: 16px;
+    }
+    .sv-focus {
+      gap: 8px;
+      padding: 12px 8px;
+    }
+    .sv-close kbd {
+      display: none;
+    }
+  }
+
+  /* NDA tiles */
+  .redact .frame {
+    cursor: default;
+  }
+  .blur {
+    position: absolute;
+    inset: -10%;
+    width: 120% !important;
+    height: 120% !important;
+    object-fit: cover;
+    filter: blur(22px) saturate(0.7);
+  }
+  .nda {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: max-content;
+    max-width: 86%;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    font-size: 12px;
+    font-weight: 500;
+    rotate: -2deg;
+    transition: rotate var(--med) var(--spring), scale var(--med) var(--spring);
+  }
+  .redact:hover .nda {
+    rotate: 0deg;
+    scale: 1.04;
+  }
+
+  .empty {
+    padding: 32px;
+    text-align: center;
+    border-radius: var(--r);
+  }
+
+  /* Lightbox */
+  .lightbox {
+    max-width: min(1280px, 94vw);
+    max-height: 92dvh;
+    padding: 8px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .lightbox[open] {
+    display: grid;
+    gap: 8px;
+  }
+  .lightbox::backdrop {
+    background: rgb(30 30 30 / 0.32);
+    backdrop-filter: blur(2px);
+  }
+  .lightbox img {
+    max-width: 100%;
+    max-height: calc(92dvh - 72px);
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+    object-fit: contain;
+    border-radius: 13px;
+    background: var(--canvas);
+  }
+  .lb-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 4px 0 8px;
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .lb-caption {
+    font-weight: 500;
+  }
+  .lb-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .lb-count {
+    margin-right: 6px;
+  }
+  .pill.icon {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  @media (max-width: 860px) {
+    .grid {
+      grid-template-columns: 1fr;
+      grid-auto-rows: auto;
+      gap: 28px;
+    }
+    .tile,
+    .tile.wide,
+    .tile.tall {
+      grid-column: auto;
+      grid-row: auto;
+    }
+    .frame {
+      aspect-ratio: 5 / 4;
+    }
+    .tall .frame {
+      aspect-ratio: 4 / 5;
+    }
+    .lb-count,
+    .lb-close kbd {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  let cleanup: (() => void) | undefined;
+
+  document.addEventListener('astro:page-load', () => {
+    cleanup?.();
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.lightbox');
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-shots] button.frame[data-full]')];
+    if (!dialog || !buttons.length) return;
+    const view = dialog.querySelector('img')!;
+    const caption = dialog.querySelector('.lb-caption')!;
+    const count = dialog.querySelector('.lb-count')!;
+    const close = dialog.querySelector('.lb-close') as HTMLButtonElement;
+    const prevBtn = dialog.querySelector('.lb-prev') as HTMLButtonElement;
+    const nextBtn = dialog.querySelector('.lb-next') as HTMLButtonElement;
+    let at = 0;
+
+    const vt = (fn: () => void) =>
+      'startViewTransition' in document && !matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? document.startViewTransition(fn)
+        : (fn(), null);
+
+    function fill(i: number) {
+      at = i;
+      const b = buttons[i];
+      const thumb = b.querySelector('img')!;
+      // Show the already-decoded thumbnail first, then upgrade to the large file.
+      view.src = thumb.currentSrc || thumb.src;
+      view.alt = b.dataset.caption ?? '';
+      const full = new Image();
+      full.src = b.dataset.full!;
+      full.decode().then(() => at === i && (view.src = full.src), () => {});
+      caption.textContent = b.dataset.caption ?? '';
+      count.textContent = `${String(i + 1).padStart(2, '0')} / ${String(buttons.length).padStart(2, '0')}`;
+    }
+
+    function open(i: number) {
+      const thumb = buttons[i].querySelector('img')!;
+      thumb.style.viewTransitionName = 'shot';
+      vt(() => {
+        thumb.style.viewTransitionName = '';
+        fill(i);
+        view.style.viewTransitionName = 'shot';
+        dialog!.showModal();
+      })?.finished.finally(() => (view.style.viewTransitionName = ''));
+    }
+
+    function shut() {
+      const thumb = buttons[at].querySelector('img')!;
+      view.style.viewTransitionName = 'shot';
+      buttons[at].scrollIntoView({ block: 'nearest' });
+      vt(() => {
+        view.style.viewTransitionName = '';
+        dialog!.close();
+        thumb.style.viewTransitionName = 'shot';
+      })?.finished.finally(() => (thumb.style.viewTransitionName = ''));
+      buttons[at].focus({ preventScroll: true });
+    }
+
+    function step(d: number) {
+      const i = (at + d + buttons.length) % buttons.length;
+      view.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+      setTimeout(() => fill(i), 110);
+    }
+
+    const onClick = (e: Event) => open(buttons.indexOf(e.currentTarget as HTMLButtonElement));
+    buttons.forEach((b) => b.addEventListener('click', onClick));
+    const onCancel = (e: Event) => {
+      e.preventDefault();
+      shut();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') step(1);
+      else if (e.key === 'ArrowLeft') step(-1);
+    };
+    // Clicks outside the card land on the dialog element itself, beyond its box.
+    const onBackdrop = (e: MouseEvent) => {
+      const r = dialog.getBoundingClientRect();
+      if (e.target === dialog && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) shut();
+    };
+    dialog.addEventListener('cancel', onCancel);
+    dialog.addEventListener('keydown', onKey);
+    dialog.addEventListener('click', onBackdrop);
+    close.addEventListener('click', shut);
+    prevBtn.addEventListener('click', () => step(-1));
+    nextBtn.addEventListener('click', () => step(1));
+
+    cleanup = () => {
+      if (dialog.open) dialog.close();
+    };
+  });
+</script>
+
+<script>
+  // Stacks: click the pile, see every screen in a grid, click one to see it large and cycle.
+  document.addEventListener('astro:page-load', () => {
+    const dlg = document.querySelector<HTMLDialogElement>('dialog.stackview');
+    const piles = [...document.querySelectorAll<HTMLButtonElement>('[data-stack]')];
+    if (!dlg || !piles.length) return;
+    const grid = dlg.querySelector<HTMLUListElement>('.sv-grid')!;
+    const focus = dlg.querySelector<HTMLElement>('.sv-focus')!;
+    const big = focus.querySelector('img')!;
+    const back = dlg.querySelector<HTMLButtonElement>('.sv-back')!;
+    const title = dlg.querySelector('.sv-title')!;
+    const count = dlg.querySelector('.sv-count')!;
+    type Shot = { thumb: string; full: string };
+    let shots: Shot[] = [];
+    let at = -1;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const vt = (fn: () => void) =>
+      'startViewTransition' in document && !matchMedia('(prefers-reduced-motion: reduce)').matches ? document.startViewTransition(fn) : fn();
+
+    const showGrid = () => {
+      at = -1;
+      focus.hidden = true;
+      grid.hidden = false;
+      back.hidden = true;
+      count.textContent = `${shots.length} screens`;
+    };
+    const showOne = (i: number) => {
+      at = (i + shots.length) % shots.length;
+      big.src = shots[at].thumb;
+      const full = new Image();
+      full.src = shots[at].full;
+      const want = at;
+      full.decode().then(() => want === at && (big.src = full.src), () => {});
+      grid.hidden = true;
+      focus.hidden = false;
+      back.hidden = false;
+      count.textContent = `${pad(at + 1)} / ${pad(shots.length)}`;
+    };
+
+    piles.forEach((pile) =>
+      pile.addEventListener('click', () => {
+        shots = JSON.parse(pile.dataset.stack!);
+        title.textContent = pile.dataset.caption ?? '';
+        grid.replaceChildren(
+          ...shots.map((sh, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<button type="button" style="--i:${i}" aria-label="Screen ${i + 1}"><img src="${sh.thumb}" alt="" loading="lazy"></button>`;
+            li.querySelector('button')!.addEventListener('click', () => vt(() => showOne(i)));
+            return li;
+          }),
+        );
+        showGrid();
+        dlg.showModal();
+      }),
+    );
+
+    back.addEventListener('click', () => vt(showGrid));
+    dlg.querySelector('.sv-close')!.addEventListener('click', () => dlg.close());
+    focus.querySelector('.sv-prev')!.addEventListener('click', () => showOne(at - 1));
+    focus.querySelector('.sv-next')!.addEventListener('click', () => showOne(at + 1));
+    dlg.addEventListener('keydown', (e) => {
+      if (at < 0) return;
+      if (e.key === 'ArrowRight') showOne(at + 1);
+      else if (e.key === 'ArrowLeft') showOne(at - 1);
+    });
+    // Esc steps back to the grid first, then closes.
+    dlg.addEventListener('cancel', (e) => {
+      if (at >= 0) {
+        e.preventDefault();
+        vt(showGrid);
+      }
+    });
+    dlg.addEventListener('click', (e) => {
+      const r = dlg.getBoundingClientRect();
+      if (e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) dlg.close();
+    });
+  });
+</script>
+
+<style is:global>
+  ::view-transition-group(shot) {
+    animation-duration: 0.42s;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  ::view-transition-old(shot),
+  ::view-transition-new(shot) {
+    height: 100%;
+    object-fit: contain;
+    overflow: clip;
+  }
+</style>

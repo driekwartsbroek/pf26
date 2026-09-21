@@ -1,0 +1,139 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../lib/site';
+import { url } from '../lib/util';
+
+const education = [
+  { years: '2019 → 2020', what: 'MSc Applied Economic Sciences, minor in Marketing', where: 'Ghent University', note: 'Cum laude. Thesis on how animation affects impulse buying.' },
+  { years: '2019 → 2020', what: 'Erasmus exchange, Management and Technology', where: 'TUM School of Management, Munich', note: '' },
+  { years: '2016 → 2019', what: 'BSc Applied Economic Sciences', where: 'Ghent University', note: 'Editor and designer at Schamper, the student paper.' },
+  { years: '2015 → 2016', what: 'Graphics and Digital Media', where: 'Arteveldehogeschool', note: '' },
+];
+
+const certs = [
+  { year: '2026', what: 'Experience Analytics Web Fundamentals', where: 'Contentsquare' },
+  { year: '2023', what: 'Verified Designer, UX Design Foundations, Typography, UI Components, Design Composition, Figma', where: 'Uxcel' },
+  { year: '2023', what: 'UX Foundations: Research. Figma Essential Training', where: 'LinkedIn Learning' },
+  { year: '2022', what: 'Master Data Management', where: 'Eduvision' },
+  { year: '2022', what: 'Design Thinking: Customer Experience', where: 'LinkedIn Learning' },
+];
+---
+
+<Base layer="aside" title="About" up={url('/')}>
+  <article class="about">
+    <header>
+      <h1>About</h1>
+      <p class="lede">
+        I studied economics, then taught myself design. I like SaaS products with real workflows behind them, and I do my best work sitting inside a
+        product team, talking to developers every day.
+      </p>
+    </header>
+
+    <section>
+      <h2 class="muted">Education</h2>
+      <ol class="rows surface">
+        {
+          education.map((e) => (
+            <li>
+              <span class="when num muted">{e.years}</span>
+              <span class="what">
+                {e.what}
+                <span class="muted">{e.where}</span>
+                {e.note && <span class="note muted">{e.note}</span>}
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section>
+      <h2 class="muted">Courses and certificates</h2>
+      <ol class="rows surface">
+        {
+          certs.map((c) => (
+            <li>
+              <span class="when num muted">{c.year}</span>
+              <span class="what">
+                {c.what}
+                <span class="muted">{c.where}</span>
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    {
+      (site.email || site.linkedin) && (
+        <section>
+          <h2 class="muted">Contact</h2>
+          <p class="contact">
+            {site.email && <a class="pill" href={`mailto:${site.email}`}>{site.email}</a>}
+            {site.linkedin && <a class="pill" href={site.linkedin} rel="me">LinkedIn</a>}
+          </p>
+        </section>
+      )
+    }
+  </article>
+</Base>
+
+<style>
+  .about {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: calc(var(--bar) + clamp(48px, 10vh, 120px)) var(--gutter) 96px;
+    display: grid;
+    gap: 48px;
+  }
+  h1 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .lede {
+    font-size: clamp(20px, 2.4vw, 26px);
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    text-wrap: pretty;
+  }
+  h2 {
+    font-size: 13px;
+    font-weight: 400;
+    margin: 0 0 10px 2px;
+  }
+  .rows {
+    border-radius: var(--r);
+    padding: 0 20px;
+  }
+  .rows li {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 16px;
+    padding: 14px 0;
+  }
+  .rows li + li {
+    border-top: 1px solid var(--border);
+  }
+  .when {
+    font-size: 13px;
+    padding-top: 1px;
+  }
+  .what {
+    display: grid;
+    gap: 2px;
+  }
+  .note {
+    font-size: 13px;
+  }
+  .contact {
+    display: flex;
+    gap: 8px;
+  }
+  @media (max-width: 560px) {
+    .rows li {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+  }
+</style>

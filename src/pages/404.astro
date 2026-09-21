@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../lib/util';
+---
+
+<Base layer="aside" title="Not found" up={url('/')}>
+  <section class="lost">
+    <div class="card surface">
+    <h1>This page drifted off.</h1>
+    <a class="pill dark" href={url('/')}>Back to the start</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .lost {
+    height: 100svh;
+    display: grid;
+    place-content: center;
+    padding: var(--gutter);
+  }
+  h1 {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .card {
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+    padding: 28px 32px;
+    text-align: center;
+  }
+</style>

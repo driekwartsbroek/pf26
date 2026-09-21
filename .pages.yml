@@ -1,0 +1,169 @@
+# Pages CMS (https://pagescms.org): sign in with GitHub, pick this repo, edit companies in a form.
+# Every save is a commit, which triggers the deploy workflow.
+media:
+  input: src/content/companies/shots
+  output: ./shots
+
+content:
+  - name: companies
+    label: Companies
+    type: collection
+    path: src/content/companies
+    filename: "{primary}.md"
+    view:
+      fields: [name, role, start, order]
+      primary: name
+      sort: [order]
+    fields:
+      - name: name
+        label: Name
+        type: string
+        required: true
+      - name: role
+        label: Role
+        type: string
+        required: true
+      - name: start
+        label: Start (YYYY-MM)
+        type: string
+        required: true
+        pattern: ^\d{4}-\d{2}$
+      - name: end
+        label: End (YYYY-MM, leave empty if current)
+        type: string
+        pattern: ^(\d{4}-\d{2})?$
+      - name: order
+        label: Position on the ring (1 is the top)
+        type: number
+        required: true
+      - name: accent
+        label: Accent colour (hex)
+        type: string
+      - name: clients
+        label: Clients
+        type: string
+        list: true
+      - name: nda
+        label: Under NDA (show one locked panel instead of work)
+        type: boolean
+        default: false
+      - name: kind
+        label: Page type
+        type: select
+        default: design
+        options:
+          values: [design, analysis]
+      - name: flow
+        label: Flow diagram (analysis pages)
+        type: object
+        fields:
+          - name: title
+            label: Title
+            type: string
+            default: Where I sat
+          - name: steps
+            label: Steps
+            type: object
+            list: true
+            fields:
+              - name: label
+                label: Label
+                type: string
+                required: true
+              - name: you
+                label: This step was mine
+                type: boolean
+                default: false
+      - name: did
+        label: What I did (sticky notes)
+        type: object
+        list: true
+        fields:
+          - name: title
+            label: Title
+            type: string
+            required: true
+          - name: text
+            label: Detail
+            type: text
+      - name: methods
+        label: Tools and methods
+        type: string
+        list: true
+      - name: prototypes
+        label: Live prototypes
+        type: object
+        list: true
+        fields:
+          - name: title
+            label: Title
+            type: string
+            required: true
+          - name: url
+            label: URL (Framer, Figma prototype, ProtoPie...)
+            type: string
+            required: true
+          - name: caption
+            label: Caption
+            type: string
+          - name: device
+            label: Frame
+            type: select
+            default: desktop
+            options:
+              values: [desktop, mobile]
+          - name: poster
+            label: Cover image (optional)
+            type: image
+          - name: embed
+            label: Play inside the page (turn off if the site blocks embedding)
+            type: boolean
+            default: true
+          - name: width
+            label: Design width in px (desktop prototypes open at this width, scaled to fit)
+            type: number
+            default: 1440
+      - name: shots
+        label: Shots
+        type: object
+        list: true
+        fields:
+          - name: image
+            label: Image (for a link tile, this becomes its cover)
+            type: image
+          - name: link
+            label: Link (turns the tile into a link card)
+            type: string
+          - name: stack
+            label: Stack (several screens piled up; opens as a grid)
+            type: image
+            list: true
+          - name: caption
+            label: Caption
+            type: string
+            required: true
+          - name: title
+            label: Link title (optional, overrides the page's own)
+            type: string
+          - name: text
+            label: Link description (optional, overrides the page's own)
+            type: text
+          - name: span
+            label: Size
+            type: select
+            default: normal
+            options:
+              values: [normal, wide, tall]
+          - name: fit
+            label: Fit
+            type: select
+            default: cover
+            options:
+              values: [cover, contain]
+          - name: redact
+            label: Under NDA (blurred, original never published)
+            type: boolean
+            default: false
+      - name: body
+        label: Context
+        type: text

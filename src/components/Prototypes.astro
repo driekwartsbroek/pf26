@@ -1,0 +1,630 @@
+---
+// Live prototypes in a browser or phone frame. The prototype only loads when someone presses play,
+// so pages stay light; after that it's fully interactive, with restart, fullscreen and open-in-tab.
+import { Image } from 'astro:assets';
+
+interface Proto {
+  title: string;
+  url?: string;
+  caption?: string;
+  device: 'desktop' | 'mobile';
+  poster?: ImageMetadata;
+  embed: boolean;
+  width: number;
+}
+interface Props {
+  items: Proto[];
+}
+
+const { items } = Astro.props;
+const host = (u?: string) => (u ? new URL(u).host.replace(/^www\./, '') : 'Link coming soon');
+const desktop = items.filter((p) => p.device === 'desktop');
+const mobile = items.filter((p) => p.device === 'mobile');
+---
+
+<div class="protos">
+  <p class="note">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4" /><path d="M8 7.2v3.8M8 4.9v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+    {
+      items.length > 1
+        ? 'These prototypes were mostly built for one screen size. They open in a large window at that size, scaled to fit, so small screens will show them smaller than intended.'
+        : 'This prototype was built for one screen size. It opens in a large window at that size, scaled to fit, so small screens will show it smaller than intended.'
+    }
+  </p>
+  {
+    [desktop, mobile].map(
+      (group, g) =>
+        group.length > 0 && (
+          <div class:list={['group', g === 0 ? 'desktop' : 'mobile']}>
+            {group.map((p) => (
+              <figure class:list={['proto', p.device]} data-proto aria-label={p.title}>
+                <div class="frame">
+                  <div class="chrome">
+                    {p.device === 'desktop' && (
+                      <span class="dots" aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                    )}
+                    <span class="addr">{host(p.url)}</span>
+                    <span class="actions">
+                      <button class="act" type="button" data-restart hidden aria-label={`Restart ${p.title}`} title="Restart">
+                        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </button>
+                      <button class="act" type="button" data-fullscreen hidden aria-label={`Show ${p.title} fullscreen`} title="Fullscreen">
+                        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </button>
+                      {p.url && <a class="act" href={p.url} target="_blank" rel="noopener" aria-label={`Open ${p.title} in a new tab`} title="Open in new tab">
+                        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 3H3v10h10V9.5M9 2.5h4.5V7M13.2 2.8 7.5 8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </a>}
+                    </span>
+                  </div>
+                  <div class="stage">
+                    <div class="cover">
+                      {p.poster ? (
+                        <Image src={p.poster} alt="" widths={[640, 1200, 1800]} sizes="(max-width: 860px) 100vw, 1100px" class="poster" />
+                      ) : (
+                        <div class="ph" aria-hidden="true">
+                          {p.url && p.embed && <div class="live" data-preview={p.url} data-width={p.device === 'mobile' ? 390 : p.width} />}
+                        </div>
+                      )}
+                      {!p.url ? (
+                        <span class="soon">Prototype coming soon</span>
+                      ) : p.embed ? (
+                        p.device === 'desktop' ? (
+                          <button class="play pill dark" type="button" data-window={p.url} data-title={p.title} data-width={p.width} aria-label={`Play ${p.title}`}>
+                            <svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M1 1.2v9.6c0 .5.5.8.9.5l7.4-4.8a.6.6 0 0 0 0-1L1.9.7C1.5.4 1 .7 1 1.2Z" fill="currentColor" /></svg>
+                            <span>Play prototype</span>
+                          </button>
+                        ) : (
+                          <button class="play pill dark" type="button" data-play={p.url} data-title={p.title} aria-label={`Play ${p.title}`}>
+                            <svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M1 1.2v9.6c0 .5.5.8.9.5l7.4-4.8a.6.6 0 0 0 0-1L1.9.7C1.5.4 1 .7 1 1.2Z" fill="currentColor" /></svg>
+                            <span>Play prototype</span>
+                          </button>
+                        )
+                      ) : (
+                        <a class="play pill dark" href={p.url} target="_blank" rel="noopener">
+                          Open prototype <span aria-hidden="true">↗</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </figure>
+            ))}
+          </div>
+        ),
+    )
+  }
+</div>
+
+<dialog class="pwin" aria-label="Prototype">
+  <div class="pw-bar">
+    <span class="pw-addr"></span>
+    <span class="pw-scale num"></span>
+    <span class="actions">
+      <button class="act" type="button" data-pw-restart aria-label="Restart" title="Restart">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+      <button class="act" type="button" data-pw-full aria-label="Fullscreen" title="Fullscreen">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+      <a class="act" data-pw-open target="_blank" rel="noopener" aria-label="Open in new tab" title="Open in new tab">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 3H3v10h10V9.5M9 2.5h4.5V7M13.2 2.8 7.5 8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </a>
+      <button class="pill pw-close" type="button" data-pw-close>Close <kbd>Esc</kbd></button>
+    </span>
+  </div>
+  <div class="pw-stage">
+    <span class="pw-loading">Loading prototype</span>
+  </div>
+</dialog>
+
+<style>
+  .protos {
+    display: grid;
+    gap: 36px;
+  }
+  .note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    justify-self: start;
+    max-width: 62ch;
+    margin-bottom: -12px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+  .note svg {
+    flex: none;
+    margin-top: 1.5px;
+  }
+  /* The first prototype is the main piece; the rest sit side by side under it. */
+  .group.desktop {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 36px 24px;
+  }
+  .group.desktop > :first-child {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 860px) {
+    .group.desktop {
+      grid-template-columns: 1fr;
+    }
+  }
+  .group.mobile {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 36px 28px;
+  }
+
+  .proto {
+    display: grid;
+    gap: 12px;
+    animation: proto-in 460ms var(--spring) both;
+  }
+  @keyframes proto-in {
+    from {
+      opacity: 0;
+      translate: 0 10px;
+    }
+  }
+
+  .frame {
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+  }
+  .mobile .frame {
+    border-radius: 28px;
+    padding: 0 8px 8px;
+  }
+
+  .chrome {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    padding: 0 8px 0 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile .chrome {
+    height: 36px;
+    padding: 0 0 0 10px;
+    border-bottom: 0;
+  }
+  .dots {
+    display: flex;
+    gap: 6px;
+  }
+  .dots i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #e3e3e0;
+  }
+  .addr {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .desktop .addr {
+    max-width: 360px;
+    margin: 0 auto;
+    padding: 4px 10px;
+    border-radius: 7px;
+    background: var(--canvas);
+  }
+  .actions {
+    display: flex;
+    gap: 2px;
+  }
+  .act {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background-color var(--fast), color var(--fast), scale var(--med) var(--spring);
+  }
+  .act:hover {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .act:active {
+    scale: 0.92;
+  }
+  .act[hidden] {
+    display: none;
+  }
+
+  .stage {
+    position: relative;
+    background: var(--canvas);
+  }
+  .desktop .stage {
+    aspect-ratio: 16 / 10;
+  }
+  .mobile .stage {
+    height: min(76svh, 780px);
+    aspect-ratio: 390 / 844;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .stage :global(iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #fff;
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+  .stage :global(iframe.ready) {
+    opacity: 1;
+  }
+  .stage:fullscreen {
+    aspect-ratio: auto;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .cover {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    transition: opacity 300ms;
+  }
+  .cover.gone {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .cover :global(.poster) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .ph {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: end;
+    gap: 4px;
+    padding: clamp(16px, 4%, 36px);
+    background:
+      radial-gradient(circle at 1px 1px, rgb(0 0 0 / 0.12) 1px, transparent 0) 0 0 / 18px 18px,
+      linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, #fff), color-mix(in srgb, var(--accent) 4%, #fff));
+  }
+  .live {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .live :global(iframe) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border: 0;
+    background: #fff;
+    transform-origin: 0 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 400ms;
+  }
+  .live :global(iframe.ready) {
+    opacity: 1;
+  }
+
+  .soon {
+    position: relative;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .play {
+    position: relative;
+    height: 44px;
+    padding: 0 18px;
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.2), 0 12px 28px -8px rgb(0 0 0 / 0.35);
+    transition: scale var(--med) var(--spring), background-color var(--fast);
+  }
+  .play:hover {
+    scale: 1.05;
+  }
+  .play:active {
+    scale: 0.97;
+  }
+  .play.loading {
+    pointer-events: none;
+  }
+  .play.loading svg {
+    animation: pulse 900ms ease-in-out infinite;
+  }
+  @keyframes pulse {
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  /* Large window for desktop prototypes */
+  .pwin {
+    width: calc(100vw - 32px);
+    height: calc(100dvh - 32px);
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    border: 0;
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .pwin[open] {
+    display: flex;
+    flex-direction: column;
+    animation: pw-in 320ms var(--spring) both;
+  }
+  @keyframes pw-in {
+    from {
+      opacity: 0;
+      scale: 0.96;
+    }
+  }
+  .pwin::backdrop {
+    background: rgb(30 30 30 / 0.4);
+    backdrop-filter: blur(3px);
+    animation: pw-fade 200ms both;
+  }
+  @keyframes pw-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .pw-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 48px;
+    padding: 0 8px 0 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .pw-addr {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+  .pw-scale {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--canvas);
+    box-shadow: inset 0 0 0 1px var(--border);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .pw-scale:empty {
+    display: none;
+  }
+  .pw-close {
+    height: 32px;
+    margin-left: 6px;
+  }
+  .pw-stage {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    background: var(--canvas);
+  }
+  .pw-stage:fullscreen {
+    background: #fff;
+  }
+  .pw-stage :global(iframe) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border: 0;
+    background: #fff;
+    transform-origin: 0 0;
+    opacity: 0;
+    transition: opacity 250ms;
+  }
+  .pw-stage :global(iframe.ready) {
+    opacity: 1;
+  }
+  .pw-loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  @media (max-width: 720px) {
+    .pwin {
+      width: 100vw;
+      height: 100dvh;
+      border-radius: 0;
+    }
+    .pw-addr,
+    .pw-close kbd {
+      display: none;
+    }
+  }
+
+</style>
+
+<script>
+  // Desktop prototypes: a large window that renders the prototype at its design width and scales it to fit.
+  document.addEventListener('astro:page-load', () => {
+    const win = document.querySelector<HTMLDialogElement>('dialog.pwin');
+    if (!win) return;
+    const stage = win.querySelector<HTMLElement>('.pw-stage')!;
+    const addr = win.querySelector('.pw-addr')!;
+    const scaleTag = win.querySelector('.pw-scale')!;
+    const open = win.querySelector<HTMLAnchorElement>('[data-pw-open]')!;
+    let frame: HTMLIFrameElement | null = null;
+    let url = '';
+    let width = 1440;
+
+    const fit = () => {
+      if (!frame) return;
+      const sw = stage.clientWidth;
+      const sh = stage.clientHeight;
+      const s = Math.min(1, sw / width);
+      frame.style.width = `${s < 1 ? width : sw}px`;
+      frame.style.height = `${sh / s}px`;
+      frame.style.transform = s < 1 ? `scale(${s})` : '';
+      scaleTag.textContent = s < 1 ? `${width}px at ${Math.round(s * 100)}%` : '';
+    };
+
+    const show = (btn: HTMLElement) => {
+      url = btn.dataset.window!;
+      width = Number(btn.dataset.width) || 1440;
+      win.setAttribute('aria-label', btn.dataset.title ?? 'Prototype');
+      addr.textContent = new URL(url).host;
+      open.href = url;
+      frame = document.createElement('iframe');
+      frame.src = url;
+      frame.title = btn.dataset.title ?? 'Prototype';
+      frame.allow = 'fullscreen; clipboard-write; autoplay';
+      frame.addEventListener('load', () => frame?.classList.add('ready'), { once: true });
+      stage.appendChild(frame);
+      win.showModal();
+      fit();
+      frame.focus();
+    };
+
+    document.querySelectorAll<HTMLElement>('[data-window]').forEach((btn) => btn.addEventListener('click', () => show(btn)));
+    win.querySelector('[data-pw-close]')!.addEventListener('click', () => win.close());
+    win.querySelector('[data-pw-restart]')!.addEventListener('click', () => frame && (frame.src = url));
+    win.querySelector('[data-pw-full]')!.addEventListener('click', () => stage.requestFullscreen?.());
+    win.addEventListener('click', (e) => {
+      const r = win.getBoundingClientRect();
+      if (e.target === win && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) win.close();
+    });
+    // Unload on close so nothing keeps playing in the background.
+    win.addEventListener('close', () => {
+      frame?.remove();
+      frame = null;
+    });
+    const ro = new ResizeObserver(fit);
+    ro.observe(stage);
+    document.addEventListener('astro:before-swap', () => ro.disconnect(), { once: true });
+  });
+
+  // Covers show the prototype itself: a scaled, non-interactive preview, loaded when the card nears the viewport.
+  document.addEventListener('astro:page-load', () => {
+    const boxes = [...document.querySelectorAll<HTMLElement>('[data-preview]')];
+    if (!boxes.length) return;
+    const fit = (box: HTMLElement) => {
+      const f = box.querySelector('iframe');
+      if (!f || !box.clientWidth) return;
+      const w = Number(box.dataset.width) || 1440;
+      const s = box.clientWidth / w;
+      f.style.width = `${w}px`;
+      f.style.height = `${box.clientHeight / s}px`;
+      f.style.transform = `scale(${s})`;
+    };
+    const ro = new ResizeObserver((entries) => entries.forEach((e) => fit(e.target as HTMLElement)));
+    const io = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          io.unobserve(e.target);
+          const box = e.target as HTMLElement;
+          const f = document.createElement('iframe');
+          f.src = box.dataset.preview!;
+          f.tabIndex = -1;
+          f.setAttribute('aria-hidden', 'true');
+          f.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+          f.addEventListener('load', () => f.classList.add('ready'), { once: true });
+          box.appendChild(f);
+          fit(box);
+          ro.observe(box);
+        }),
+      { rootMargin: '300px' },
+    );
+    boxes.forEach((b) => io.observe(b));
+    document.addEventListener(
+      'astro:before-swap',
+      () => {
+        io.disconnect();
+        ro.disconnect();
+      },
+      { once: true },
+    );
+  });
+
+  // Phone prototypes play inline in their frame.
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLElement>('[data-proto]').forEach((proto) => {
+      const play = proto.querySelector<HTMLButtonElement>('[data-play]');
+      if (!play) return;
+      const stage = proto.querySelector<HTMLElement>('.stage')!;
+      const cover = proto.querySelector<HTMLElement>('.cover')!;
+      const restart = proto.querySelector<HTMLButtonElement>('[data-restart]')!;
+      const full = proto.querySelector<HTMLButtonElement>('[data-fullscreen]')!;
+      let frame: HTMLIFrameElement | null = null;
+
+      play.addEventListener('click', () => {
+        proto.querySelector('.live')?.remove();
+        play.classList.add('loading');
+        play.querySelector('span')!.textContent = 'Loading';
+        frame = document.createElement('iframe');
+        frame.src = play.dataset.play!;
+        frame.title = play.dataset.title ?? 'Prototype';
+        frame.allow = 'fullscreen; clipboard-write; autoplay';
+        frame.addEventListener(
+          'load',
+          () => {
+            frame!.classList.add('ready');
+            cover.classList.add('gone');
+            restart.hidden = false;
+            if (document.fullscreenEnabled) full.hidden = false;
+            frame!.focus();
+          },
+          { once: true },
+        );
+        stage.appendChild(frame);
+      });
+
+      restart.addEventListener('click', () => {
+        if (frame) frame.src = play.dataset.play!;
+      });
+      full.addEventListener('click', () => stage.requestFullscreen?.());
+    });
+  });
+</script>

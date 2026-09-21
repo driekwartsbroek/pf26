@@ -1,0 +1,179 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Clock from '../components/Clock.astro';
+import Sticker from '../components/Sticker.astro';
+import { site } from '../lib/site';
+import { companies, url } from '../lib/util';
+
+const portraits = import.meta.glob<{ default: ImageMetadata }>('../assets/portrait.{jpg,jpeg,png,webp,svg}', { eager: true });
+const portrait = Object.values(portraits)[0].default;
+const list = await companies();
+---
+
+<Base layer="me" next={url('/work')}>
+  <section class="me">
+    <article class="card surface" data-scene-start>
+      <div class="avatar" transition:name="me">
+        <Image src={portrait} alt={`Portrait of ${site.name}`} widths={[96, 192]} sizes="96px" loading="eager" />
+      </div>
+
+      <div class="who">
+        <h1>{site.name}</h1>
+        <p class="muted">{site.title}</p>
+      </div>
+
+      <p class="line">I design SaaS products from inside the team, working directly with the developers who build them.</p>
+
+      <ul class="chips">
+        <li><span class="dot live" aria-hidden="true"></span>{site.city} <Clock /></li>
+        <li>Self-taught</li>
+        <li>SaaS</li>
+      </ul>
+
+      <a class="work" href={url('/work')}>
+        <span class="stack" aria-hidden="true">
+          {list.map((c, i) => <Sticker slug={c.id} accent={c.data.accent} size="26px" class={`s s${i}`} />)}
+        </span>
+        <span class="label">
+          <span>See the work</span>
+          <span class="muted">{list.length} places</span>
+        </span>
+        <kbd aria-hidden="true">→</kbd>
+      </a>
+
+    </article>
+
+  </section>
+</Base>
+
+<style>
+  .me {
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: var(--bar) var(--gutter) var(--gutter);
+    position: relative;
+  }
+
+  .card {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 380px);
+    padding: 24px;
+    display: grid;
+    gap: 16px;
+    animation: pop 420ms var(--spring) both;
+  }
+  @keyframes pop {
+    from {
+      opacity: 0;
+      scale: 0.96;
+      translate: 0 6px;
+    }
+  }
+
+  .avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--canvas);
+    box-shadow: 0 0 0 1px var(--border), 0 0 0 4px #fff, 0 0 0 5px var(--border);
+    margin: 4px 0 0 4px;
+  }
+  .avatar :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .who h1 {
+    font-size: 20px;
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .who p {
+    font-size: 14px;
+  }
+
+  .line {
+    font-size: 15px;
+    text-wrap: pretty;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chips li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--canvas);
+    box-shadow: inset 0 0 0 1px var(--border);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .dot.live {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #14ae5c;
+    box-shadow: 0 0 0 3px rgb(20 174 92 / 0.18);
+  }
+
+  .work {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px -12px -12px;
+    padding: 12px;
+    border-radius: 14px;
+    transition: background-color var(--fast);
+  }
+  .work:hover,
+  .work:focus-visible {
+    background: var(--hover);
+  }
+  .label {
+    display: grid;
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  .label .muted {
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .stack {
+    display: flex;
+    padding-left: 6px;
+  }
+  .stack :global(.s) {
+    margin-left: -5px;
+    transition: translate var(--med) var(--spring), rotate var(--med) var(--spring);
+    transition-delay: calc(var(--d, 0) * 30ms);
+  }
+  .stack :global(.s0) { --d: 0; rotate: -6deg; }
+  .stack :global(.s1) { --d: 1; rotate: 4deg; }
+  .stack :global(.s2) { --d: 2; rotate: -3deg; }
+  .stack :global(.s3) { --d: 3; rotate: 7deg; }
+  .stack :global(.s4) { --d: 4; rotate: -5deg; }
+  .work:hover .stack :global(.s),
+  .work:focus-visible .stack :global(.s) {
+    translate: 0 -3px;
+    rotate: 0deg;
+  }
+  .work:hover kbd {
+    color: var(--ink);
+  }
+
+</style>

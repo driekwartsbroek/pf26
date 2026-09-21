@@ -1,0 +1,816 @@
+---
+// A virtual Bert working on the canvas behind every page: pen tool, fill, text,
+// corner radius, relabel. Purely decorative, so it's hidden from assistive tech.
+import { site } from '../lib/site';
+const firstName = site.name.split(' ')[0];
+---
+
+<div class="scene" aria-hidden="true" data-scene data-name={firstName} transition:persist="scene"></div>
+
+<style is:global>
+  .scene {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    font-family: 'Inter Variable', system-ui, sans-serif;
+    view-transition-name: scene;
+  }
+  @media (max-width: 520px) {
+    .scene {
+      display: none;
+    }
+  }
+  .scene svg.ink {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .scene .path {
+    fill: none;
+    stroke: #0d99ff;
+    stroke-width: 1.5;
+  }
+  .scene .preview {
+    fill: none;
+    stroke: #0d99ff;
+    stroke-width: 1;
+    opacity: 0.6;
+  }
+  .scene .anchor {
+    fill: #fff;
+    stroke: #0d99ff;
+    stroke-width: 1.2;
+  }
+  .scene .anchor.on {
+    fill: #0d99ff;
+  }
+  .scene .arm {
+    stroke: #0d99ff;
+    stroke-width: 1;
+  }
+  .scene .knob {
+    fill: #fff;
+    stroke: #0d99ff;
+    stroke-width: 1.2;
+  }
+
+  .scene .btn {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+    transition: opacity 400ms, scale 400ms var(--spring);
+  }
+  .scene .btn.gone {
+    opacity: 0;
+    scale: 0.9;
+  }
+  .scene .txt {
+    position: relative;
+    white-space: pre;
+    padding: 1px 0;
+  }
+  .scene .txt.hl {
+    background: rgb(13 153 255 / 0.6);
+  }
+  .scene .txt.caret::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    top: 1px;
+    bottom: 1px;
+    width: 1px;
+    background: #fff;
+    animation: scene-blink 1s steps(1) infinite;
+  }
+  @keyframes scene-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .scene .selbox {
+    position: absolute;
+    outline: 1px solid #0d99ff;
+    transition: opacity 120ms;
+  }
+  .scene .selbox i {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    background: #fff;
+    border: 1px solid #0d99ff;
+    translate: -50% -50%;
+  }
+  .scene .selbox .dims {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    translate: -50% 0;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #0d99ff;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .scene .radius {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5px solid #0d99ff;
+  }
+
+  .scene .chip {
+    position: absolute;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #1e1e1e;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+
+  .scene .note {
+    position: absolute;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 12px 22px;
+    border-radius: 3px;
+    background: #fff1b8;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 10px 18px -8px rgb(0 0 0 / 0.22);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #1e1e1e;
+    rotate: var(--tilt, -3deg);
+    transform-origin: 30% 20%;
+    animation: note-in 360ms var(--spring) both;
+    transition: opacity 400ms, scale 400ms var(--spring);
+  }
+  .scene .note.gone {
+    opacity: 0;
+    scale: 0.9;
+  }
+  @keyframes note-in {
+    from {
+      opacity: 0;
+      scale: 0.6;
+      rotate: 8deg;
+    }
+  }
+  .scene .note-text {
+    position: relative;
+    align-self: flex-start;
+  }
+  .scene .note-text.caret::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    bottom: 2px;
+    width: 1px;
+    height: 1.1em;
+    background: #1e1e1e;
+    animation: scene-blink 1s steps(1) infinite;
+  }
+  .scene .note-by {
+    position: absolute;
+    left: 12px;
+    bottom: 8px;
+    font-size: 10px;
+    font-weight: 400;
+    color: rgb(0 0 0 / 0.45);
+  }
+
+  .scene .cur {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: flex-start;
+    will-change: translate;
+  }
+  .scene .cur .ico {
+    position: relative;
+    width: 20px;
+    height: 22px;
+    transition: scale 80ms;
+    transform-origin: 2px 2px;
+  }
+  .scene .cur.down .ico {
+    scale: 0.86;
+  }
+  .scene .cur svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: none;
+  }
+  .scene .cur[data-tool='arrow'] .i-arrow,
+  .scene .cur[data-tool='pen'] .i-pen,
+  .scene .cur[data-tool='text'] .i-text {
+    display: block;
+  }
+  .scene .cur .i-text {
+    left: -5px;
+    top: -9px;
+  }
+  .scene .cur .tag {
+    margin: 14px 0 0 -4px;
+    padding: 2px 7px;
+    border-radius: 4px 10px 10px 10px;
+    background: #0d99ff;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  type Pt = { x: number; y: number };
+
+  const LABELS = ['Download', 'Upload', 'Continue', 'Book a call', 'Get started', 'Save changes', 'Send invite'];
+  const FILLS = ['#1e1e1e', '#0d99ff', '#9747ff', '#14ae5c', '#f24822'];
+  const SVG = 'http://www.w3.org/2000/svg';
+  const ICONS = `
+    <svg class="i-arrow" width="18" height="20" viewBox="0 0 18 20"><path d="M1 1l15 7.5-6.5 1.8L6.2 18z" fill="#0d99ff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+    <svg class="i-pen" width="20" height="20" viewBox="0 0 20 20"><path d="M1.5 1.5l11 3.6 4.6 4.6-7.4 7.4-4.6-4.6z" fill="#0d99ff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M1.5 1.5l6.4 6.4" stroke="#fff" stroke-width="1.3"/><circle cx="8.6" cy="8.6" r="1.5" fill="#fff"/></svg>
+    <svg class="i-text" width="10" height="18" viewBox="0 0 10 18"><path d="M1 1.5h2.5c.9 0 1.5.6 1.5 1.5v12c0 .9.6 1.5 1.5 1.5H9M9 1.5H6.5C5.6 1.5 5 2.1 5 3M5 15c0 .9-.6 1.5-1.5 1.5H1M3 9h4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M1 1.5h2.5c.9 0 1.5.6 1.5 1.5v12c0 .9.6 1.5 1.5 1.5H9M9 1.5H6.5C5.6 1.5 5 2.1 5 3M5 15c0 .9-.6 1.5-1.5 1.5H1M3 9h4" fill="none" stroke="#0d99ff" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+
+  class Stop extends Error {}
+  let generation = 0;
+
+  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const rand = (a: number, b: number) => a + Math.random() * (b - a);
+
+  function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, parent: Element) {
+    const e = document.createElement(tag);
+    e.className = cls;
+    parent.appendChild(e);
+    return e;
+  }
+  function svgEl(tag: string, cls: string, parent: Element) {
+    const e = document.createElementNS(SVG, tag);
+    e.setAttribute('class', cls);
+    parent.appendChild(e);
+    return e;
+  }
+
+  // The scene element is persisted across page swaps, so Bert keeps his spot between pages.
+  let cursorEl: HTMLElement | null = null;
+  let view = { x: -1, y: -1 }; // last cursor position in viewport coords
+
+  function start(root: HTMLElement) {
+    const gen = ++generation;
+    // Clear the previous page's work: buttons fade out, tool chrome goes at once.
+    for (const n of [...root.children]) {
+      if (n === cursorEl) continue;
+      if (n.classList.contains('btn')) {
+        n.classList.add('gone');
+        setTimeout(() => n.remove(), 450);
+      } else n.remove();
+    }
+    const alive = () => {
+      if (gen !== generation || !root.isConnected) throw new Stop();
+    };
+    const frame = () => new Promise<number>((r) => requestAnimationFrame(r));
+    async function tween(ms: number, fn: (t: number) => void, curve = ease) {
+      const t0 = performance.now();
+      for (;;) {
+        await frame();
+        alive();
+        const t = Math.min(1, (performance.now() - t0) / ms);
+        fn(curve(t));
+        if (t >= 1) return;
+      }
+    }
+    async function wait(ms: number) {
+      const t0 = performance.now();
+      while (performance.now() - t0 < ms) {
+        await frame();
+        alive();
+      }
+    }
+
+    // ---- cursor ----
+    if (!cursorEl || !root.contains(cursorEl)) {
+      cursorEl = el('div', 'cur', root);
+      cursorEl.innerHTML = `<span class="ico">${ICONS}</span><span class="tag">${root.dataset.name ?? ''}</span>`;
+    }
+    const cur = cursorEl;
+    cur.dataset.tool = 'arrow';
+    cur.classList.remove('down');
+    const ink = svgEl('svg', 'ink', root) as SVGSVGElement;
+    const chip = el('div', 'chip', root);
+    let cx = 0;
+    let cy = 0;
+    let onMove: (() => void) | null = null;
+    const place = (x: number, y: number) => {
+      cx = x;
+      cy = y;
+      cur.style.translate = `${x}px ${y}px`;
+      view = { x: x - scrollX, y: y - scrollY };
+      onMove?.();
+    };
+    async function moveTo(x: number, y: number, pace = 1, curve = 0.18) {
+      const x0 = cx;
+      const y0 = cy;
+      const d = Math.hypot(x - x0, y - y0);
+      if (d < 1) return;
+      const ms = Math.min(1100, 260 + d * 0.9) / pace;
+      // Hands don't move in straight lines: bend the path a little.
+      const bend = rand(-curve, curve) * d;
+      const mx = (x0 + x) / 2 + (-(y - y0) / d) * bend;
+      const my = (y0 + y) / 2 + ((x - x0) / d) * bend;
+      await tween(ms, (t) => {
+        const a = (1 - t) * (1 - t);
+        const b = 2 * (1 - t) * t;
+        const c = t * t;
+        place(a * x0 + b * mx + c * x, a * y0 + b * my + c * y);
+      });
+    }
+    const press = () => cur.classList.add('down');
+    const release = () => cur.classList.remove('down');
+    async function click() {
+      press();
+      await wait(90);
+      release();
+      await wait(80);
+    }
+    const tool = (t: 'arrow' | 'pen' | 'text') => (cur.dataset.tool = t);
+
+    // ---- layout: find empty canvas around whatever is on the page ----
+    // The scene sits at the document origin, so document coords are scene coords.
+    type Box = { x: number; y: number; w: number; h: number };
+    const built: { el: HTMLElement; box: Box; zone: 'top' | 'left' | 'right'; note?: HTMLElement }[] = [];
+    const AVOID =
+      '.bar > *, .dock, main h1, main h2, main p, main li, main dl, main a, main img, main kbd, main .surface, main .frame, main .wheel, main .title, main .fsection, main .nda-panel';
+    const SOLID = '.surface, .wheel, .frame, .crumbs, .links, .dock, .fsection, .nda-panel';
+    const docRect = (e: Element): Box => {
+      const r = e.getBoundingClientRect();
+      return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height };
+    };
+    const hit = (a: Box, b: Box) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    const crosses = (x0: number, y0: number, x1: number, y1: number, rects: Box[]) => {
+      for (let i = 1; i < 24; i++) {
+        const px = x0 + ((x1 - x0) * i) / 24;
+        const py = y0 + ((y1 - y0) * i) / 24;
+        if (rects.some((r) => px > r.x && px < r.x + r.w && py > r.y && py < r.y + r.h)) return true;
+      }
+      return false;
+    };
+    // Three zones keep the canvas balanced: the top band, and the left and right halves below it.
+    type Zone = 'top' | 'left' | 'right';
+    const history: Record<Zone, number> = { top: 0, left: 0, right: 0 };
+    const zoneOf = (b: Box): Zone =>
+      b.y + b.h / 2 - scrollY < innerHeight * 0.34 ? 'top' : b.x + b.w / 2 - scrollX < innerWidth / 2 ? 'left' : 'right';
+    const inView = (b: Box) =>
+      b.x >= scrollX && b.x + b.w <= scrollX + innerWidth && b.y >= scrollY + 60 && b.y + b.h <= scrollY + innerHeight;
+
+    function slot(w: number, h: number, opts: { zone?: Zone; skip?: HTMLElement; far?: Box } = {}): { box: Box; zone: Zone } | null {
+      const x0 = scrollX + 40;
+      const x1 = scrollX + innerWidth - w - 60;
+      const y0 = scrollY + 100;
+      const y1 = scrollY + innerHeight - h - 100;
+      if (x1 <= x0 || y1 <= y0) return null;
+      const near = (b: Box) => b.w > 0 && b.h > 0 && b.y < scrollY + innerHeight + 300 && b.y + b.h > scrollY - 300;
+      const avoid = [...document.querySelectorAll(AVOID)].map(docRect).filter(near);
+      const solid = [...document.querySelectorAll(SOLID)].map(docRect).filter(near);
+      const others = built.filter((b) => b.el !== opts.skip);
+      const best: Partial<Record<Zone, { box: Box; score: number }>> = {};
+      for (let n = 0; n < 180; n++) {
+        const box = { x: rand(x0, x1), y: rand(y0, y1), w, h };
+        // Leave room for the selection chrome: handles, size label, radius readout.
+        if (avoid.some((a) => hit({ x: box.x - 36, y: box.y - 40, w: w + 72, h: h + 84 }, a))) continue;
+        if (others.some((b) => hit({ x: b.box.x - 50, y: b.box.y - 60, w: b.box.w + 100, h: b.box.h + 120 }, box))) continue;
+        if (others.some((b) => b.note && hit(docRect(b.note), { x: box.x - 30, y: box.y - 30, w: w + 60, h: h + 60 }))) continue;
+        const zone = zoneOf(box);
+        if (opts.zone && zone !== opts.zone) continue;
+        // Prefer nearby spots Bert can reach without ducking behind a card.
+        const blocked = crosses(cx, cy, box.x + h / 2, box.y, solid);
+        // Moves want the opposite: as far from the button's current spot as possible.
+        const score = opts.far
+          ? -Math.hypot(box.x - opts.far.x, box.y - opts.far.y) * rand(0.85, 1.15)
+          : Math.hypot(box.x - cx, box.y - cy) * rand(0.6, 1.4) + (blocked ? 4000 : 0);
+        if (!best[zone] || score < best[zone]!.score) best[zone] = { box, score };
+      }
+      const zones = (Object.keys(best) as Zone[]).filter((z) => best[z]);
+      if (!zones.length) return null;
+      // Random, but weighted toward the emptiest zone, counting what's on screen now and what came before.
+      const weight = (z: Zone) => 1 / Math.pow(1 + others.filter((b) => b.zone === z).length * 2 + history[z] * 0.5, 2);
+      const total = zones.reduce((a, z) => a + weight(z), 0);
+      let roll = Math.random() * total;
+      const zone = zones.find((z) => (roll -= weight(z)) <= 0) ?? zones[0];
+      return { box: best[zone]!.box, zone };
+    }
+
+    // ---- one button, start to finish ----
+    async function build(label: string, fill: string) {
+      const W = Math.round(rand(150, 180));
+      const H = 44;
+      const found = slot(W, H);
+      if (!found) {
+        await wait(1500);
+        return;
+      }
+      const { box, zone } = found;
+      history[zone]++;
+      const { x, y } = box;
+
+      const R = H / 2;
+      const K = (4 / 3) * R; // cubic handle length for a half circle
+
+      // Pen tool: four smooth points, handles dragged out horizontally.
+      tool('pen');
+      const pts: (Pt & { dir: number; h: number })[] = [
+        { x: x + R, y, dir: 1, h: 0 },
+        { x: x + W - R, y, dir: 1, h: 0 },
+        { x: x + W - R, y: y + H, dir: -1, h: 0 },
+        { x: x + R, y: y + H, dir: -1, h: 0 },
+      ];
+      const path = svgEl('path', 'path', ink);
+      const preview = svgEl('path', 'preview', ink);
+      const arms = svgEl('g', '', ink);
+      const anchors: Element[] = [];
+      let placed = 0;
+      let closed = false;
+      const out = (p: (typeof pts)[0]) => `${p.x + p.dir * p.h} ${p.y}`;
+      const inn = (p: (typeof pts)[0]) => `${p.x - p.dir * p.h} ${p.y}`;
+      const draw = () => {
+        let d = placed ? `M${pts[0].x} ${pts[0].y}` : '';
+        for (let i = 1; i < placed; i++) d += ` C${out(pts[i - 1])} ${inn(pts[i])} ${pts[i].x} ${pts[i].y}`;
+        if (closed) d += ` C${out(pts[3])} ${inn(pts[0])} ${pts[0].x} ${pts[0].y}Z`;
+        path.setAttribute('d', d);
+      };
+      const showArms = (i: number | null) => {
+        arms.replaceChildren();
+        anchors.forEach((a, k) => a.classList.toggle('on', k === i));
+        if (i === null || !pts[i].h) return;
+        const p = pts[i];
+        const ax = p.x - p.dir * p.h;
+        const bx = p.x + p.dir * p.h;
+        const line = svgEl('line', 'arm', arms);
+        line.setAttribute('x1', `${ax}`);
+        line.setAttribute('x2', `${bx}`);
+        line.setAttribute('y1', `${p.y}`);
+        line.setAttribute('y2', `${p.y}`);
+        for (const hx of [ax, bx]) {
+          const k = svgEl('circle', 'knob', arms);
+          k.setAttribute('cx', `${hx}`);
+          k.setAttribute('cy', `${p.y}`);
+          k.setAttribute('r', '3');
+        }
+      };
+      // Rubber band from the last point to the pen, like Figma's preview segment.
+      onMove = () => {
+        if (!placed || closed) return preview.setAttribute('d', '');
+        const last = pts[placed - 1];
+        preview.setAttribute('d', `M${last.x} ${last.y} Q${out(last)} ${cx} ${cy}`);
+      };
+
+      for (let i = 0; i < 4; i++) {
+        const p = pts[i];
+        await moveTo(p.x, p.y);
+        press();
+        placed = i + 1;
+        const a = svgEl('rect', 'anchor', ink);
+        a.setAttribute('x', `${p.x - 3.5}`);
+        a.setAttribute('y', `${p.y - 3.5}`);
+        a.setAttribute('width', '7');
+        a.setAttribute('height', '7');
+        anchors.push(a);
+        draw();
+        showArms(i);
+        await wait(80);
+        await tween(420, (t) => {
+          p.h = t * K;
+          draw();
+          showArms(i);
+          place(p.x + p.dir * p.h, p.y);
+        });
+        release();
+        await wait(rand(120, 260));
+      }
+      // Close the path on the first point.
+      await moveTo(pts[0].x, pts[0].y);
+      await click();
+      closed = true;
+      draw();
+      onMove();
+      showArms(null);
+      await wait(250);
+
+      // Fill it and hand over to a real element.
+      path.setAttribute('fill', fill);
+      path.style.fillOpacity = '0';
+      await tween(260, (t) => (path.style.fillOpacity = `${t}`));
+      const btn = el('div', 'btn', root);
+      Object.assign(btn.style, { left: `${x}px`, top: `${y}px`, width: `${W}px`, height: `${H}px`, background: fill, borderRadius: `${R}px` });
+      const txt = el('span', 'txt', btn);
+      root.insertBefore(btn, ink);
+      built.push({ el: btn, box, zone });
+      [path, preview, arms, ...anchors].forEach((n) => n.remove());
+      onMove = null;
+      await wait(200);
+
+      // Text tool: click in, type the default label.
+      tool('text');
+      await moveTo(x + W / 2, y + H / 2 + 2);
+      await click();
+      txt.classList.add('caret');
+      for (const ch of 'Button') {
+        txt.textContent += ch;
+        await wait(rand(60, 120));
+      }
+      await wait(300);
+      txt.classList.remove('caret');
+      tool('arrow');
+      await moveTo(x + W + 40, y + H + 30, 1.4);
+      await click();
+      await wait(250);
+
+      // Select it.
+      await moveTo(x + W * rand(0.6, 0.8), y + H * 0.7);
+      await click();
+      const sel = el('div', 'selbox', root);
+      Object.assign(sel.style, { left: `${x}px`, top: `${y}px`, width: `${W}px`, height: `${H}px` });
+      sel.innerHTML = `<i style="left:0;top:0"></i><i style="left:100%;top:0"></i><i style="left:0;top:100%"></i><i style="left:100%;top:100%"></i><span class="dims">${W} × ${H}</span>`;
+      const knob = el('div', 'radius', root);
+      let r = R;
+      const knobAt = () => {
+        const o = Math.max(Math.min(r, R) * 0.62, 9);
+        return { x: x + o, y: y + o };
+      };
+      const setR = (v: number) => {
+        r = v;
+        btn.style.borderRadius = `${v}px`;
+        const k = knobAt();
+        knob.style.left = `${k.x}px`;
+        knob.style.top = `${k.y}px`;
+      };
+      setR(R);
+      await wait(400);
+
+      // Corner radius: drag the handle in and out.
+      await moveTo(knobAt().x, knobAt().y);
+      await wait(150);
+      press();
+      chip.style.opacity = '1';
+      const dragR = async (to: number, ms: number) => {
+        const from = r;
+        await tween(ms, (t) => {
+          setR(Math.round(from + (to - from) * t));
+          const k = knobAt();
+          place(k.x, k.y);
+          chip.textContent = `Radius ${r}`;
+          chip.style.left = `${cx + 14}px`;
+          chip.style.top = `${cy - 26}px`;
+        });
+      };
+      await dragR(4, 700);
+      await wait(250);
+      await dragR(Math.round(rand(10, 16)), 600);
+      release();
+      chip.style.opacity = '0';
+      await wait(350);
+
+      // Double-click the text and replace it.
+      const t = txt.getBoundingClientRect();
+      const rr = root.getBoundingClientRect();
+      await moveTo(t.left - rr.left + t.width * 0.6, t.top - rr.top + t.height * 0.6);
+      tool('text');
+      await click();
+      await click();
+      txt.classList.add('hl');
+      sel.style.opacity = '0';
+      knob.style.opacity = '0';
+      await wait(450);
+      txt.classList.remove('hl');
+      txt.classList.add('caret');
+      txt.textContent = '';
+      for (const ch of label) {
+        txt.textContent += ch;
+        await wait(rand(55, 115));
+      }
+      await wait(400);
+      txt.classList.remove('caret');
+
+      // Click away to deselect, then take a breath.
+      tool('arrow');
+      await moveTo(x + W / 2 + rand(-60, 60), y + H + rand(50, 80), 1.3);
+      await click();
+      sel.remove();
+      knob.remove();
+      await wait(rand(700, 1200));
+
+      if (built.length > 4) {
+        const old = built.shift()!;
+        for (const n of [old.el, old.note]) {
+          n?.classList.add('gone');
+          setTimeout(() => n?.remove(), 450);
+        }
+      }
+    }
+
+    // ---- select an existing button and drag it to the other side ----
+    const selectBox = (b: Box) => {
+      const sel = el('div', 'selbox', root);
+      Object.assign(sel.style, { left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, height: `${b.h}px` });
+      sel.innerHTML = `<i style="left:0;top:0"></i><i style="left:100%;top:0"></i><i style="left:0;top:100%"></i><i style="left:100%;top:100%"></i><span class="dims">${Math.round(b.w)} × ${Math.round(b.h)}</span>`;
+      return sel;
+    };
+
+    async function moveOne() {
+      const pool = built.filter((b) => inView(b.box));
+      if (pool.length < 2) return false;
+      // Try each button until one has somewhere to go: the opposite side first, then the remaining zone.
+      let item: (typeof built)[number] | undefined;
+      let dest: ReturnType<typeof slot> = null;
+      for (const cand of pool.sort(() => Math.random() - 0.5)) {
+        const opposite: Zone = cand.zone === 'left' ? 'right' : cand.zone === 'right' ? 'left' : Math.random() < 0.5 ? 'left' : 'right';
+        const rest = (['top', 'left', 'right'] as Zone[]).filter((z) => z !== cand.zone && z !== opposite);
+        for (const zone of [opposite, ...rest]) {
+          dest = slot(cand.box.w, cand.box.h, { zone, skip: cand.el, far: cand.box });
+          if (dest) break;
+        }
+        if (dest) {
+          item = cand;
+          break;
+        }
+      }
+      if (!item || !dest) return false;
+
+      tool('arrow');
+      const grab = { x: item.box.w * rand(0.35, 0.65), y: item.box.h * rand(0.4, 0.7) };
+      await moveTo(item.box.x + grab.x, item.box.y + grab.y);
+      await click();
+      const sel = selectBox(item.box);
+      await wait(260);
+      press();
+
+      // Curve the drag around any card in the way instead of sliding behind it.
+      const from = { x: item.box.x, y: item.box.y };
+      const to = { x: dest.box.x, y: dest.box.y };
+      const solid = [...document.querySelectorAll(SOLID)].map(docRect).filter((b) => b.w > 0);
+      let ctrl = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 + rand(-60, 60) };
+      const blockers = solid.filter((r) => crosses(from.x + grab.x, from.y + grab.y, to.x + grab.x, to.y + grab.y, [r]));
+      if (blockers.length) {
+        const top = Math.min(...blockers.map((r) => r.y));
+        const bottom = Math.max(...blockers.map((r) => r.y + r.h));
+        const below = bottom + 70 < scrollY + innerHeight - 50;
+        const wy = below ? bottom + 70 : Math.max(top - 70, scrollY + 90);
+        ctrl = { x: (from.x + to.x) / 2, y: 2 * wy - (from.y + to.y) / 2 };
+      }
+      const dist = Math.hypot(to.x - from.x, to.y - from.y);
+      chip.style.opacity = '1';
+      const noteOff = item.note ? { x: parseFloat(item.note.style.left) - from.x, y: parseFloat(item.note.style.top) - from.y } : null;
+      await tween(Math.min(1700, 650 + dist * 0.9), (t) => {
+        const a = (1 - t) * (1 - t);
+        const b2 = 2 * (1 - t) * t;
+        const c = t * t;
+        const x = a * from.x + b2 * ctrl.x + c * to.x;
+        const y = a * from.y + b2 * ctrl.y + c * to.y;
+        item.el.style.left = `${x}px`;
+        item.el.style.top = `${y}px`;
+        sel.style.left = `${x}px`;
+        sel.style.top = `${y}px`;
+        if (item.note && noteOff) {
+          item.note.style.left = `${x + noteOff.x}px`;
+          item.note.style.top = `${y + noteOff.y}px`;
+        }
+        place(x + grab.x, y + grab.y);
+        chip.textContent = `X ${Math.round(x - scrollX)}   Y ${Math.round(y - scrollY)}`;
+        chip.style.left = `${cx + 14}px`;
+        chip.style.top = `${cy - 26}px`;
+      });
+      release();
+      chip.style.opacity = '0';
+      item.box = { ...item.box, x: to.x, y: to.y };
+      item.zone = dest.zone;
+      history[dest.zone]++;
+      await wait(320);
+      await moveTo(to.x + item.box.w / 2 + rand(-50, 50), to.y + item.box.h + rand(50, 80), 1.3);
+      await click();
+      sel.remove();
+      await wait(rand(600, 1000));
+      return true;
+    }
+
+    // ---- the inside joke: a sticky note on a button ----
+    const NOTE = 'can we make this pop more?';
+    async function postIt() {
+      const pool = built.filter((b) => !b.note && inView(b.box));
+      if (!pool.length) return false;
+      const item = pool[Math.floor(Math.random() * pool.length)];
+      const NW = 132;
+      const NH = 116;
+      const avoid = [...document.querySelectorAll(AVOID)].map(docRect).filter((b) => b.w > 0);
+      const spots = [
+        { x: item.box.x + item.box.w - 22, y: item.box.y - NH + 18 },
+        { x: item.box.x - NW + 22, y: item.box.y - NH + 18 },
+        { x: item.box.x + item.box.w - 22, y: item.box.y + item.box.h - 18 },
+      ];
+      const spot = spots.find((p) => {
+        const b = { x: p.x, y: p.y, w: NW, h: NH };
+        return inView(b) && !avoid.some((a) => hit(b, a)) && !built.some((o) => o !== item && hit(b, o.box));
+      });
+      if (!spot) return false;
+
+      tool('arrow');
+      await moveTo(spot.x + NW / 2, spot.y + NH / 2);
+      await click();
+      const note = el('div', 'note', root);
+      Object.assign(note.style, { left: `${spot.x}px`, top: `${spot.y}px`, width: `${NW}px`, height: `${NH}px` });
+      note.style.setProperty('--tilt', `${rand(-5, 3).toFixed(1)}deg`);
+      note.innerHTML = `<span class="note-text"></span><span class="note-by">${root.dataset.name ?? ''}</span>`;
+      item.note = note;
+      await wait(380);
+      tool('text');
+      await moveTo(spot.x + 22, spot.y + 30, 1.6);
+      await click();
+      const text = note.querySelector<HTMLElement>('.note-text')!;
+      text.classList.add('caret');
+      for (const ch of NOTE) {
+        text.textContent += ch;
+        await wait(rand(45, 110));
+      }
+      await wait(500);
+      text.classList.remove('caret');
+      tool('arrow');
+      await moveTo(spot.x + NW + rand(30, 60), spot.y + NH + rand(20, 50), 1.3);
+      await click();
+      await wait(rand(900, 1400));
+      return true;
+    }
+
+    // First visit: start beside the element marked as the start (the home card), or lower right.
+    if (view.x < 0) {
+      const s0 = document.querySelector('[data-scene-start]')?.getBoundingClientRect();
+      view = s0 ? { x: s0.right + 10, y: s0.bottom + 14 } : { x: innerWidth * 0.72, y: innerHeight * 0.7 };
+    }
+    place(Math.min(view.x, innerWidth - 60) + scrollX, Math.min(view.y, innerHeight - 40) + scrollY);
+
+    (async () => {
+      let n = Math.floor(Math.random() * LABELS.length);
+      try {
+        await wait(700);
+        // Mostly building; now and then rearranging, and once in a while the sticky note.
+        let actions = 0;
+        let lastMove = false;
+        for (;;) {
+          const roll = Math.random();
+          const noteOnScreen = built.some((b) => b.note);
+          let did = false;
+          if (built.length >= 2 && !noteOnScreen && (actions === 3 || roll < 0.12)) did = await postIt();
+          else if (built.length >= 3 && !lastMove && roll < 0.3) {
+            did = await moveOne();
+            lastMove = did;
+          }
+          if (!did) {
+            await build(LABELS[n % LABELS.length], FILLS[n % FILLS.length]);
+            n++;
+            lastMove = false;
+          }
+          actions++;
+        }
+      } catch (e) {
+        if (!(e instanceof Stop)) throw e;
+      }
+    })();
+
+    // Layout changed: clear the board and start over.
+    let t: number | undefined;
+    const onResize = () => {
+      clearTimeout(t);
+      t = window.setTimeout(() => root.isConnected && start(root), 300);
+    };
+    addEventListener('resize', onResize, { once: true });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    const root = document.querySelector<HTMLElement>('[data-scene]');
+    if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    start(root);
+  });
+  document.addEventListener('astro:before-swap', () => generation++);
+</script>
