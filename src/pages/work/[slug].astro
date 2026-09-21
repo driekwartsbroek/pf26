@@ -127,7 +127,27 @@ const pad = (n: number) => String(n).padStart(2, '0');
           )}
         </div>
       ) : (
-        <ShotGrid shots={shots} company={name} />
+        <>
+          <ShotGrid shots={shots} company={name} />
+          {(did.length > 0 || methods.length > 0) && (
+            <div class="design-extra">
+              {did.length > 0 && (
+                <FigSection label="What I did">
+                  <Stickies items={did} />
+                </FigSection>
+              )}
+              {methods.length > 0 && (
+                <FigSection label="Tools and methods">
+                  <ul class="methods">
+                    {methods.map((m) => (
+                      <li>{m}</li>
+                    ))}
+                  </ul>
+                </FigSection>
+              )}
+            </div>
+          )}
+        </>
       )
     }
     {
@@ -236,6 +256,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
   .nda-extra {
     margin-top: 28px;
+  }
+  .design-extra {
+    margin-top: 56px;
   }
   .methods {
     display: flex;
