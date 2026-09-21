@@ -16,12 +16,11 @@ shots:
       - ./shots/artwork-album-07.webp
     caption: Fictional album covers
     unit: covers
-  - image: ./shots/artwork-disco-kim.webp
-    caption: Disco Elysium fan art, Kim Kitsuragi
-    span: tall
-  - image: ./shots/artwork-disco-harry.webp
-    caption: Disco Elysium fan art, Harry Du Bois
-    span: tall
+  - stack:
+      - ./shots/artwork-disco-kim.webp
+      - ./shots/artwork-disco-harry.webp
+    caption: Disco Elysium fan art, Kim Kitsuragi and Harry Du Bois
+    unit: paintings
   - stack:
       - ./shots/artwork-volksgeist-final.webp
       - ./shots/artwork-volksgeist-concept-2.png

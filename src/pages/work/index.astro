@@ -181,6 +181,13 @@ const first = jobs.map((c) => c.data.start!).sort()[0]?.slice(0, 4);
   .wedge:focus-visible .name {
     color: var(--ink);
   }
+  /* With a mouse, hovering shows name, role and years in the centre, so the labels only add noise.
+     Touch screens keep them. */
+  @media (hover: hover) and (pointer: fine) {
+    .name {
+      display: none;
+    }
+  }
 
   .lines {
     position: absolute;
