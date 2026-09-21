@@ -69,6 +69,27 @@ const pad = (n: number) => String(n).padStart(2, '0');
     {nda && <NdaPanel company={name} />}
 
     {
+      nda && (did.length > 0 || methods.length > 0) && (
+        <div class="nda-extra">
+          {did.length > 0 && (
+            <FigSection label="What I did">
+              <Stickies items={did} />
+            </FigSection>
+          )}
+          {methods.length > 0 && (
+            <FigSection label="Tools and methods">
+              <ul class="methods">
+                {methods.map((m) => (
+                  <li>{m}</li>
+                ))}
+              </ul>
+            </FigSection>
+          )}
+        </div>
+      )
+    }
+
+    {
       !nda && prototypes.length > 0 && (
         <FigSection label={prototypes.length > 1 ? 'Live prototypes' : 'Live prototype'} class="protos-section">
           <Prototypes items={prototypes} />
@@ -201,6 +222,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
   .company :global(.protos-section) {
     margin-bottom: 40px;
+  }
+  .nda-extra {
+    margin-top: 28px;
   }
   .methods {
     display: flex;

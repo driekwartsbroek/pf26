@@ -75,7 +75,7 @@ content:
                 type: boolean
                 default: false
       - name: did
-        label: What I did (sticky notes)
+        label: What I did (sticky notes, also shown on NDA pages)
         type: object
         list: true
         fields:
@@ -87,7 +87,7 @@ content:
             label: Detail
             type: text
       - name: methods
-        label: Tools and methods
+        label: Tools and methods (also shown on NDA pages)
         type: string
         list: true
       - name: prototypes

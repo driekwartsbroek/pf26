@@ -47,7 +47,7 @@ shots:
 
 ### Under NDA
 
-`nda: true` on a company replaces all work on its page with one large locked panel and a "Get in touch" button. Use it for a current job.
+`nda: true` on a company replaces all work on its page with one large locked panel and a "Get in touch" button. Use it for a current job. `did` (sticky notes) and `methods` still show under the panel, so you can describe the work without showing it.
 
 ### Live prototypes
 
