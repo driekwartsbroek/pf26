@@ -1,36 +1,54 @@
 ---
-# DRAFT: generic functional-analyst work. Replace with what you actually did.
 name: Tobania
 role: Functional Analyst
 start: 2022-01
 end: 2023-08
 order: 4
 accent: "#c8102e"
-clients: [Attentia, Vlaamse Overheid]
+clients:
+  - Attentia
+  - Vlaamse Overheid
+nda: false
 kind: analysis
 flow:
   title: Where I sat
   steps:
     - label: Business question
-    - label: Analysis
+      you: false
+    - label: Legacy data and APIs
+      you: false
+    - label: Analysis and screens
       you: true
-    - label: Specs and stories
     - label: Development
-    - label: Acceptance test
-    - label: Release
+      you: false
+    - label: Sprint review
+      you: false
 did:
-  - title: Ran requirement workshops
-    text: Sat down with HR and payroll experts to pin down what the system actually had to do.
-  - title: Wrote specs devs could build from
-    text: Functional specs and user stories clear enough that nobody needed a meeting to start.
+  - title: Where UI design started for me
+    text: On Attentia's employee management app I designed screens in Figma for the
+      first time, next to the analysis.
+  - title: Read the legacy first
+    text: Old SQL databases and API calls, to understand how things worked before
+      deciding how they should.
   - title: Mapped the processes
-    text: As-is and to-be flows in BPMN, to find where cases got stuck and why.
-  - title: Sketched screens early
-    text: Quick wireframes to settle a discussion faster than a document could.
-  - title: Tested against the spec
-    text: Wrote acceptance scenarios and checked every release before it reached users.
-  - title: Translated both ways
-    text: Business language to developers, technical constraints back to the business.
-methods: [UML, BPMN, User stories, Acceptance testing, Wireframing, Jira, Confluence]
+    text: BPMN for the flows, UML in Sparx Enterprise Architect for the model.
+  - title: Stories developers built from
+    text: Written and refined in Azure DevOps, with a wiki to keep it all findable.
+  - title: New modules, same system
+    text: Contract views and new modules inside the existing design system, down to
+      the validations.
+  - title: Two ways of working both ways
+    text: Sprints at Attentia, large specification documents for the Flemish
+      government.
+methods:
+  - UML
+  - BPMN
+  - User stories
+  - Acceptance testing
+  - Wireframing
+  - SQL
+  - Azure DevOps
+  - Sparx Enterprise Architect
+prototypesPlacement: top
 ---
-Functional analyst at Tobania, part of Sopra Steria, placed with Attentia and the Flemish government. This is where I learned to think in systems: data, rules and the people between them.
+Functional analyst at Tobania, part of Sopra Steria, placed with Attentia and later the Flemish government. On Attentia's employee management app I mapped the processes and wrote the user stories, and for the first time designed the screens myself. It's where I learned everything that happens before design starts and after it ships, and where I fell for UI design.
