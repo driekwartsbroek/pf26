@@ -42,6 +42,10 @@ content:
         label: Clients
         type: string
         list: true
+      - name: side
+        label: Side project (keeps its dates, but isn't counted as a job)
+        type: boolean
+        default: false
       - name: nda
         label: Under NDA (show one locked panel instead of work)
         type: boolean

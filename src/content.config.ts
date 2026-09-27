@@ -16,6 +16,8 @@ const companies = defineCollection({
       start: blank(month.optional()), // leave empty for work that spans years, like artwork
       end: blank(month.optional()),
       order: z.number(),
+      // Side project with dates (like lolskins.io): shows its period but doesn't count as a job.
+      side: blank(z.boolean().default(false)),
       accent: blank(z.string().default('#151515')),
       clients: blank(z.array(z.string()).default([])),
       // 'analysis' pages lead with a flow, sticky notes and methods instead of screens.

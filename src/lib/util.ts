@@ -9,8 +9,8 @@ export function url(path = '/') {
   return `${base}${clean}` || '/';
 }
 
-/** Entries with dates are jobs; entries without (like artwork) are side work. */
-export const isJob = (c: Company) => Boolean(c.data.start);
+/** Entries with dates are jobs; entries without dates (artwork) or marked `side` (lolskins.io) are side work. */
+export const isJob = (c: Company) => Boolean(c.data.start) && !c.data.side;
 
 export async function companies() {
   return (await getCollection('companies')).sort((a, b) => a.data.order - b.data.order);
