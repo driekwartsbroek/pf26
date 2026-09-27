@@ -6,7 +6,20 @@ side: true
 order: 7
 accent: "#5b3fa8"
 kind: design
+prototypesPlacement: bottom
+prototypes:
+  - title: Ahri's champion page on lolskins.io
+    caption: The real page, live. Scroll it, and watch the art breathe.
+    url: https://lolskins.io/champion/Ahri/
+    device: desktop
+    width: 1440
 shots:
+  - video: ./video/lolskins-headers.mp4
+    image: ./shots/lolskins-headers-poster.jpg
+    caption: Champion headers, with a depth parallax that moves the art in 3D
+    span: wide
+  - image: ./shots/lolskins-depth-split.png
+    caption: How it moves, every splash gets a depth map at build time and a shader shifts near and far apart
   - link: https://lolskins.io/
     caption: lolskins.io, live
     text: Every League of Legends skin with its rarity, price, splash art and 3D model.
@@ -38,6 +51,8 @@ did:
     text: A tier from Common to Unobtainable, the price in RP and orange essence, and whether to keep or disenchant it.
   - title: Reasons to come back
     text: Days since each champion's last skin, upcoming PBE skins, a Worlds vote, and brackets and tier lists that export share cards.
+  - title: Depth from a flat painting
+    text: Each of the 2,183 splash arts runs through Depth Anything V2 once, at build time. A small WebGL shader then sweeps near and far layers past each other, and falls back to the still image on slow devices.
   - title: Free to run
     text: About 15,000 prebuilt pages on Cloudflare's free plan and a data update on GitHub Actions twice a week. Nothing in it can send a bill.
   - title: Directing an AI developer

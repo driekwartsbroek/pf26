@@ -2,6 +2,7 @@
 import { Image, getImage } from 'astro:assets';
 import { linkPreview, type Preview } from '../lib/linkPreview';
 import RivePlayer from './RivePlayer.astro';
+import { videoFor } from '../lib/util';
 
 interface Shot {
   image?: ImageMetadata;
@@ -9,6 +10,7 @@ interface Shot {
   stack?: ImageMetadata[];
   rive?: string;
   stateMachine?: string;
+  video?: string;
   unit?: string;
   caption: string;
   title?: string;
@@ -29,11 +31,18 @@ type Item = Shot & {
   full: string;
   preview?: Preview & { host: string };
   pile?: { thumb: string; full: string; w: number; h: number }[];
+  clip?: { src: string; poster?: string };
 };
 
 const items: Item[] = await Promise.all(
   shots.map(async (s) => {
     if (s.rive) return { ...s, tiny: '', full: '' };
+    if (s.video) {
+      const src = videoFor(s.video);
+      if (!src) throw new Error(`Video not found: ${s.video} (put it in src/content/companies/video)`);
+      const poster = s.image ? (await getImage({ src: s.image, width: Math.min(s.image.width, 1600), format: 'webp' })).src : undefined;
+      return { ...s, tiny: '', full: '', clip: { src, poster } };
+    }
     if (s.stack?.length) {
       const pile = await Promise.all(
         s.stack.map(async (img) => {
@@ -77,7 +86,15 @@ const items: Item[] = await Promise.all(
               <span class="num">{String(i + 1).padStart(2, '0')}</span>
               {s.caption}
             </p>
-            {s.rive ? (
+            {s.clip ? (
+              <div class="frame videocard">
+                <video src={s.clip.src} poster={s.clip.poster} muted loop playsinline preload="metadata" aria-label={s.caption} data-clip></video>
+                <button class="vtoggle" type="button" aria-label="Pause" data-clip-toggle>
+                  <svg class="i-pause" width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1" fill="currentColor" /><rect x="9.5" y="2.5" width="3" height="11" rx="1" fill="currentColor" /></svg>
+                  <svg class="i-play" width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4a.8.8 0 0 0 1.2.7l8.3-5.2a.8.8 0 0 0 0-1.4L5.7 2.1a.8.8 0 0 0-1.2.7z" fill="currentColor" /></svg>
+                </button>
+              </div>
+            ) : s.rive ? (
               <div class="frame rivecard">
                 <RivePlayer src={s.rive} stateMachine={s.stateMachine} label={s.caption} />
                 <span class="try" aria-hidden="true">
@@ -380,6 +397,47 @@ const items: Item[] = await Promise.all(
   }
   .linkcard:hover .lc-go svg {
     translate: 2px -2px;
+  }
+
+  /* Video tiles: a looping clip that plays while it's on screen */
+  .videocard {
+    cursor: default;
+    background: #0b0b10;
+  }
+  .videocard video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: left center;
+  }
+  .vtoggle {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--med);
+  }
+  .videocard:hover .vtoggle,
+  .vtoggle:focus-visible,
+  .videocard.paused .vtoggle {
+    opacity: 1;
+  }
+  .vtoggle .i-play,
+  .videocard.paused .vtoggle .i-pause {
+    display: none;
+  }
+  .videocard.paused .vtoggle .i-play {
+    display: block;
   }
 
   /* Rive tiles: a live animation on the canvas */
@@ -917,3 +975,41 @@ const items: Item[] = await Promise.all(
     overflow: clip;
   }
 </style>
+
+<script>
+  // Video tiles: play while on screen, pause off screen. Never autoplay with reduced motion, and a
+  // clip someone paused stays paused.
+  document.addEventListener('astro:page-load', () => {
+    const cards = [...document.querySelectorAll<HTMLElement>('.videocard')];
+    if (!cards.length) return;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const held = new WeakSet<HTMLVideoElement>();
+    const set = (card: HTMLElement, v: HTMLVideoElement, play: boolean) => {
+      if (play) v.play().catch(() => card.classList.add('paused'));
+      else v.pause();
+      card.classList.toggle('paused', !play);
+      card.querySelector('[data-clip-toggle]')?.setAttribute('aria-label', play ? 'Pause' : 'Play');
+    };
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const v = e.target.querySelector<HTMLVideoElement>('video')!;
+        if (held.has(v)) continue;
+        set(e.target as HTMLElement, v, e.isIntersecting);
+      }
+    }, { threshold: 0.25 });
+    for (const card of cards) {
+      const v = card.querySelector<HTMLVideoElement>('video')!;
+      if (still) {
+        held.add(v);
+        set(card, v, false);
+      } else io.observe(card);
+      card.querySelector('[data-clip-toggle]')?.addEventListener('click', () => {
+        const play = v.paused;
+        if (play) held.delete(v);
+        else held.add(v);
+        set(card, v, play);
+      });
+    }
+    document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
+  });
+</script>

@@ -58,13 +58,14 @@ const companies = defineCollection({
         .array(
           z
             .object({
-              // A tile is a screen (image), a link (link, optional image as cover), a pile of screens (stack) or a live Rive animation (rive).
+              // A tile is a screen (image), a link (link, optional image as cover), a pile of screens (stack), a live Rive animation (rive) or a looping clip (video).
               image: blank(image().optional()),
               link: blank(z.url().optional()),
               stack: blank(z.array(image()).optional()),
               unit: blank(z.string().optional()), // stacks: what to call the items, e.g. "covers" (default "screens")
               rive: blank(z.string().optional()), // a Rive file in companies/rive, e.g. ./rive/penguin.riv
               stateMachine: blank(z.string().optional()), // optional; the file's first state machine runs by default
+              video: blank(z.string().optional()), // a looping clip in companies/video, e.g. ./video/reel.mp4; `image` is its poster
               caption: z.string(),
               title: blank(z.string().optional()), // link tiles: overrides the page's own title
               text: blank(z.string().optional()), // link tiles: overrides the page's own description
@@ -72,7 +73,7 @@ const companies = defineCollection({
               fit: blank(z.enum(['cover', 'contain']).default('cover')),
               redact: blank(z.boolean().default(false)),
             })
-            .refine((s) => s.image || s.link || s.stack?.length || s.rive, 'Each shot needs an image, a link, a stack or a Rive file'),
+            .refine((s) => s.image || s.link || s.stack?.length || s.rive || s.video, 'Each shot needs an image, a link, a stack, a Rive file or a video'),
         )
         .default([]),
       ),

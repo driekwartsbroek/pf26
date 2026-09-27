@@ -156,6 +156,9 @@ content:
           - name: stateMachine
             label: Rive state machine (optional)
             type: string
+          - name: video
+            label: Video clip (e.g. ./video/reel.mp4; put the file in src/content/companies/video, and use Image as its poster)
+            type: string
           - name: caption
             label: Caption
             type: string

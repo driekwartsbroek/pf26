@@ -45,3 +45,11 @@ export function riveFor(ref: string) {
   const name = ref.split('/').pop()!.replace(/\.riv$/, '');
   return Object.entries(riveFiles).find(([p]) => p.split('/').pop()!.replace(/\.riv$/, '') === name)?.[1];
 }
+
+const videoFiles = import.meta.glob<string>('../content/companies/video/*.{mp4,webm}', { query: '?url', import: 'default', eager: true });
+
+/** URL of a video clip, matched by filename ("./video/reel.mp4" or "reel.mp4"). */
+export function videoFor(ref: string) {
+  const name = ref.split('/').pop()!;
+  return Object.entries(videoFiles).find(([p]) => p.split('/').pop() === name)?.[1];
+}
