@@ -6,7 +6,7 @@ side: true
 order: 7
 accent: "#5b3fa8"
 kind: design
-prototypesPlacement: bottom
+prototypesPlacement: top
 prototypes:
   - title: Ahri's champion page on lolskins.io
     caption: The real page, live. Scroll it, and watch the art breathe.
