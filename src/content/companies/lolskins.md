@@ -8,9 +8,9 @@ accent: "#5b3fa8"
 kind: design
 prototypesPlacement: top
 prototypes:
-  - title: Ahri's champion page on lolskins.io
+  - title: Thresh's champion page on lolskins.io
     caption: The real page, live. Scroll it, and watch the art breathe.
-    url: https://lolskins.io/champion/Ahri/
+    url: https://lolskins.io/champion/Thresh/
     device: desktop
     width: 1440
 shots:
@@ -18,9 +18,10 @@ shots:
     image: ./shots/lolskins-headers-poster.jpg
     caption: Champion headers, with a depth parallax that moves the art in 3D
     span: wide
-  - image: ./shots/lolskins-depth-split.png
+  - image: ./shots/lolskins-depth-ornn.png
     caption: How it moves, every splash gets a depth map at build time and a shader shifts near and far apart
   - link: https://lolskins.io/
+    image: ./shots/lolskins-home.webp
     caption: lolskins.io, live
     text: Every League of Legends skin with its rarity, price, splash art and 3D model.
   - image: ./shots/lolskins-skin.webp
@@ -41,9 +42,8 @@ shots:
     caption: Days since each champion's last skin
   - stack:
       - ./shots/lolskins-home.webp
-      - ./shots/lolskins-worlds.webp
       - ./shots/lolskins-rarest.webp
-    caption: Home, the Worlds vote and the rarest skins in the game
+    caption: Home and the rarest skins in the game
 did:
   - title: Start from the search
     text: After a Hextech chest or a reroll, players google whether their new skin is rare. Page titles, FAQs and five guides are written around that question.
